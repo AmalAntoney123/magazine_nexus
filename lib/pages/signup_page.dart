@@ -18,6 +18,8 @@ class _SignupPageState extends State<SignupPage> {
 
   final _authService = AuthService();
 
+  bool _isLoading = false;
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -76,11 +78,11 @@ class _SignupPageState extends State<SignupPage> {
 
   void _handleSignup() async {
     if (_formKey.currentState!.validate()) {
-      try {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Processing Sign Up...')),
-        );
+      setState(() {
+        _isLoading = true;
+      });
 
+      try {
         // Create user account and session using AuthService
         await _authService.createAccount(
           email: _emailController.text,
@@ -88,9 +90,7 @@ class _SignupPageState extends State<SignupPage> {
           name: _nameController.text,
         );
 
-        // No need to call login separately as it's handled in createAccount
 
-        // Show success message and navigate
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Sign up successful!')),
@@ -131,6 +131,12 @@ class _SignupPageState extends State<SignupPage> {
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
         }
       }
     }
@@ -218,6 +224,7 @@ class _SignupPageState extends State<SignupPage> {
                               ),
                             ),
                             textCapitalization: TextCapitalization.words,
+                            enabled: !_isLoading,
                           ),
                           const SizedBox(height: 16),
                           // Email field
@@ -232,6 +239,7 @@ class _SignupPageState extends State<SignupPage> {
                               ),
                             ),
                             keyboardType: TextInputType.emailAddress,
+                            enabled: !_isLoading,
                           ),
                           const SizedBox(height: 16),
                           // Password field
@@ -246,6 +254,7 @@ class _SignupPageState extends State<SignupPage> {
                               ),
                             ),
                             obscureText: true,
+                            enabled: !_isLoading,
                           ),
                           const SizedBox(height: 16),
                           // Confirm Password field
@@ -260,13 +269,14 @@ class _SignupPageState extends State<SignupPage> {
                               ),
                             ),
                             obscureText: true,
+                            enabled: !_isLoading,
                           ),
                           const SizedBox(height: 24),
                           // Sign up button
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: _handleSignup,
+                              onPressed: _isLoading ? null : _handleSignup,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:
                                     Theme.of(context).colorScheme.primary,
@@ -277,18 +287,31 @@ class _SignupPageState extends State<SignupPage> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              child: const Text(
-                                'Sign Up',
-                                style: TextStyle(fontSize: 16),
-                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.white),
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Sign Up',
+                                      style: TextStyle(fontSize: 16),
+                                    ),
                             ),
                           ),
                           const SizedBox(height: 16),
                           // Login text
                           TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
+                            onPressed: _isLoading
+                                ? null
+                                : () {
+                                    Navigator.pop(context);
+                                  },
                             child: Text(
                               'Already have an account? Login',
                               style: TextStyle(

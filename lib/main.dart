@@ -6,6 +6,7 @@ import 'package:appwrite/appwrite.dart';
 import 'pages/home_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'pages/settings_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,13 +35,15 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Magazine Nexus',
       theme: AppTheme.lightTheme,
-      initialRoute: '/',
+      initialRoute: '/main',
       debugShowCheckedModeBanner: false,
       routes: {
-        '/': (context) => const MyHomePage(title: 'Magazine Nexus'),
+        '/': (context) => HomePage(),
+        '/settings': (context) => SettingsPage(),
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignupPage(),
         '/home': (context) => HomePage(),
+        '/main': (context) => const MyHomePage(title: 'Magazine Nexus'),
       },
     );
   }

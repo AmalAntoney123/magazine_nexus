@@ -1,12 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 
 import '../services/firebase_auth_service.dart';
+import 'home_tabs/discover/discover_page.dart';
+import 'home_tabs/subscriptions/subscriptions_page.dart';
+import 'home_tabs/cart/cart_page.dart';
+import 'home_tabs/library/library_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   HomePage({super.key});
 
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   final AuthService _authService = AuthService();
+  int _activeIndex = 0;
+
+  final List<IconData> _iconList = [
+    Icons.explore,
+    Icons.subscriptions,
+    Icons.shopping_cart,
+    Icons.library_books,
+  ];
+
+  final List<String> _tabLabels = [
+    'Discover',
+    'Subscriptions',
+    'Cart',
+    'Library',
+  ];
 
   void _handleLogout(BuildContext context) async {
     try {
@@ -27,82 +52,41 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home'),
+        title: Text(_tabLabels[_activeIndex]),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _handleLogout(context),
+            icon: const Icon(Icons.settings),
+            onPressed: () => Navigator.pushNamed(context, '/settings'),
           ),
         ],
       ),
-      body: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-
-          final user = snapshot.data;
-          if (user == null) {
-            return const Center(child: Text('Not logged in'));
-          }
-
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const CircleAvatar(
-                    radius: 50,
-                    child: Icon(Icons.person, size: 50),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Welcome, ${user.displayName ?? 'User'}!',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    user.email ?? '',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  const SizedBox(height: 24),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          ListTile(
-                            leading: const Icon(Icons.person_outline),
-                            title: const Text('Profile'),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () {
-                              // TODO: Navigate to profile page
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.settings_outlined),
-                            title: const Text('Settings'),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () {
-                              // TODO: Navigate to settings page
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+      body: _buildBody(),
+      bottomNavigationBar: AnimatedBottomNavigationBar(
+        icons: _iconList,
+        activeIndex: _activeIndex,
+        gapLocation: GapLocation.none,
+        activeColor: Theme.of(context).colorScheme.primary,
+        notchSmoothness: NotchSmoothness.verySmoothEdge,
+        height: 65,
+        onTap: (index) => setState(() => _activeIndex = index),
+        splashColor: Theme.of(context).colorScheme.primary,
+        splashRadius: 20,
       ),
     );
+  }
+
+  Widget _buildBody() {
+    switch (_activeIndex) {
+      case 0:
+        return const DiscoverPage();
+      case 1:
+        return const SubscriptionsPage();
+      case 2:
+        return const CartPage();
+      case 3:
+        return const LibraryPage();
+      default:
+        return const DiscoverPage();
+    }
   }
 }
