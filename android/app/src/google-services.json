@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1067444901462",
+    "project_id": "magazine-nexus",
+    "storage_bucket": "magazine-nexus.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1067444901462:android:63e0f7a7b136f1f3514df7",
+        "android_client_info": {
+          "package_name": "com.example.magazine_nexus"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFyZJv5FLyy7omcKHdKP2Zi96sDa0-Zjg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
