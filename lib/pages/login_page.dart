@@ -1,6 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../services/auth_service.dart';
+import '../services/firebase_auth_service.dart';
 import 'signup_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -13,6 +14,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -22,17 +24,76 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _handleLogin() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please fill in all fields'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final authService = AuthService();
       await authService.login(
         email: _emailController.text,
         password: _passwordController.text,
       );
-      // Navigate to home page on success
+
+      if (mounted) {
+        // Navigate to home page and remove all previous routes
+        Navigator.of(context)
+            .pushNamedAndRemoveUntil('/home', (route) => false);
+      }
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Login failed';
+
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'No user found with this email';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Wrong password';
+          break;
+        case 'user-disabled':
+          errorMessage = 'This account has been disabled';
+          break;
+        case 'invalid-email':
+          errorMessage = 'Invalid email address';
+          break;
+        case 'too-many-requests':
+          errorMessage = 'Too many attempts. Please try again later';
+          break;
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed: ${e.toString()}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('An unexpected error occurred: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -115,6 +176,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           keyboardType: TextInputType.emailAddress,
+                          enabled: !_isLoading,
                         ),
                         const SizedBox(height: 16),
                         // Password field
@@ -128,13 +190,14 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           obscureText: true,
+                          enabled: !_isLoading,
                         ),
                         const SizedBox(height: 24),
                         // Login button
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: _handleLogin,
+                            onPressed: _isLoading ? null : _handleLogin,
                             style: ElevatedButton.styleFrom(
                               backgroundColor:
                                   Theme.of(context).colorScheme.primary,
@@ -144,22 +207,35 @@ class _LoginPageState extends State<LoginPage> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text(
-                              'Login',
-                              style: TextStyle(fontSize: 16),
-                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                    ),
+                                  )
+                                : const Text(
+                                    'Login',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 16),
                         // Sign up text
                         TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const SignupPage()),
-                            );
-                          },
+                          onPressed: _isLoading
+                              ? null
+                              : () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const SignupPage()),
+                                  );
+                                },
                           child: Text(
                             'Don\'t have an account? Sign up',
                             style: TextStyle(

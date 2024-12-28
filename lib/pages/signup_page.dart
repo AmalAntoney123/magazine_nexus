@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../services/firebase_auth_service.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -13,6 +15,8 @@ class _SignupPageState extends State<SignupPage> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+
+  final _authService = AuthService();
 
   @override
   void dispose() {
@@ -70,11 +74,65 @@ class _SignupPageState extends State<SignupPage> {
     return null;
   }
 
-  void _handleSignup() {
+  void _handleSignup() async {
     if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Processing Sign Up...')),
-      );
+      try {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Processing Sign Up...')),
+        );
+
+        // Create user account and session using AuthService
+        await _authService.createAccount(
+          email: _emailController.text,
+          password: _passwordController.text,
+          name: _nameController.text,
+        );
+
+        // No need to call login separately as it's handled in createAccount
+
+        // Show success message and navigate
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Sign up successful!')),
+          );
+          Navigator.of(context).pushReplacementNamed('/home');
+        }
+      } on FirebaseAuthException catch (e) {
+        if (mounted) {
+          String errorMessage = 'Sign up failed';
+
+          switch (e.code) {
+            case 'email-already-in-use':
+              errorMessage = 'This email is already registered';
+              break;
+            case 'invalid-email':
+              errorMessage = 'Invalid email address';
+              break;
+            case 'operation-not-allowed':
+              errorMessage = 'Email/password accounts are not enabled';
+              break;
+            case 'weak-password':
+              errorMessage = 'Password is too weak';
+              break;
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('An unexpected error occurred: $e'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      }
     }
   }
 

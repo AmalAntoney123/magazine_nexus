@@ -1,8 +1,27 @@
 import 'package:flutter/material.dart';
 import 'pages/login_page.dart';
+import 'pages/signup_page.dart';
 import 'theme/app_theme.dart';
+import 'package:appwrite/appwrite.dart';
+import 'pages/home_page.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print('Firebase initialized successfully');
+  } catch (e) {
+    print('Failed to initialize Firebase: $e');
+  }
+
+  Client client = Client();
+  client.setProject('676fc20b003ccf154826');
+
   runApp(const MyApp());
 }
 
@@ -15,8 +34,14 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Magazine Nexus',
       theme: AppTheme.lightTheme,
-      home: const MyHomePage(title: 'Magazine Nexus'),
+      initialRoute: '/',
       debugShowCheckedModeBanner: false,
+      routes: {
+        '/': (context) => const MyHomePage(title: 'Magazine Nexus'),
+        '/login': (context) => const LoginPage(),
+        '/signup': (context) => const SignupPage(),
+        '/home': (context) => HomePage(),
+      },
     );
   }
 }
