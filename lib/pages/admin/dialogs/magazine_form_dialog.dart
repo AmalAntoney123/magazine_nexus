@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:appwrite/appwrite.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -20,32 +19,21 @@ class _MagazineFormDialogState extends State<MagazineFormDialog> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
-  final _issueNumberController = TextEditingController();
 
   File? _coverImage;
-  File? _pdfFile;
   String _frequency = 'monthly';
   String _category = 'general';
-  DateTime _publishDate = DateTime.now();
   bool _isLoading = false;
-
-  final Client client = Client()
-    ..setEndpoint('https://cloud.appwrite.io/v1')
-    ..setProject('676fc20b003ccf154826');
-  late final Storage storage;
 
   @override
   void initState() {
     super.initState();
-    storage = Storage(client);
     if (widget.magazine != null) {
       _titleController.text = widget.magazine!.title;
       _descriptionController.text = widget.magazine!.description;
       _priceController.text = widget.magazine!.price.toString();
-      _issueNumberController.text = widget.magazine!.issueNumber.toString();
       _frequency = widget.magazine!.frequency;
       _category = widget.magazine!.category;
-      _publishDate = widget.magazine!.publishDate;
     }
   }
 
@@ -61,41 +49,16 @@ class _MagazineFormDialogState extends State<MagazineFormDialog> {
     }
   }
 
-  Future<void> _pickPDFFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
-
-    if (result != null) {
-      setState(() {
-        _pdfFile = File(result.files.single.path!);
-      });
-    }
-  }
-
   Future<void> _saveMagazine() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_pdfFile == null && widget.magazine == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a PDF file')),
-      );
-      return;
-    }
 
     setState(() => _isLoading = true);
 
     try {
       String coverFileId = widget.magazine?.coverUrl ?? '';
-      String pdfFileId = widget.magazine?.pdfFileId ?? '';
-
-      print("Starting magazine save process...");
-      print("Initial PDF ID: $pdfFileId");
-      print("PDF File selected: ${_pdfFile?.path}");
 
       // Upload cover image if selected
       if (_coverImage != null) {
-        // Delete old cover if exists
         if (coverFileId.isNotEmpty) {
           await AppwriteService.deleteFile(
             bucketId: '67718720002aaa542f4d',
@@ -110,34 +73,6 @@ class _MagazineFormDialogState extends State<MagazineFormDialog> {
         );
       }
 
-      // Upload PDF file if selected
-      if (_pdfFile != null) {
-        try {
-          print("PDF file exists check passed");
-          if (pdfFileId.isNotEmpty) {
-            print("Attempting to delete old PDF: $pdfFileId");
-            await AppwriteService.deleteFile(
-              bucketId: '67718396003a69711df7',
-              fileId: pdfFileId,
-            );
-            print("Old PDF deleted successfully");
-          }
-
-          print("Starting PDF upload...");
-          print("PDF file size: ${await _pdfFile!.length()} bytes");
-          pdfFileId = await AppwriteService.uploadFile(
-            bucketId: '67718396003a69711df7',
-            file: _pdfFile!,
-            fileName: '${_titleController.text}.pdf',
-          );
-          print("PDF uploaded successfully with ID: $pdfFileId");
-        } catch (e, stackTrace) {
-          print("Error during PDF handling: $e");
-          print("Stack trace: $stackTrace");
-          rethrow;
-        }
-      }
-
       // Create magazine data
       final magazineData = Magazine(
         id: widget.magazine?.id ??
@@ -145,16 +80,12 @@ class _MagazineFormDialogState extends State<MagazineFormDialog> {
         title: _titleController.text,
         description: _descriptionController.text,
         coverUrl: coverFileId,
-        pdfFileId: pdfFileId,
         price: double.parse(_priceController.text),
         frequency: _frequency,
-        publishDate: _publishDate,
-        issueNumber: int.parse(_issueNumberController.text),
         category: _category,
+        isActive: true,
+        nextIssueDate: _calculateNextIssueDate(_frequency, DateTime.now()),
       );
-
-      print("Magazine data created, about to save to Firebase");
-      print("PDF ID being saved: ${magazineData.pdfFileId}");
 
       await FirebaseDatabase.instance
           .ref()
@@ -162,14 +93,10 @@ class _MagazineFormDialogState extends State<MagazineFormDialog> {
           .child(magazineData.id)
           .set(magazineData.toJson());
 
-      print("Save completed successfully");
-
       if (mounted) {
         Navigator.of(context).pop(true);
       }
-    } catch (e, stackTrace) {
-      print("Error in _saveMagazine: $e");
-      print("Stack trace: $stackTrace");
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error saving magazine: $e')),
@@ -177,6 +104,19 @@ class _MagazineFormDialogState extends State<MagazineFormDialog> {
       }
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  DateTime _calculateNextIssueDate(String frequency, DateTime startDate) {
+    switch (frequency) {
+      case 'weekly':
+        return startDate.add(const Duration(days: 7));
+      case 'monthly':
+        return DateTime(startDate.year, startDate.month + 1, startDate.day);
+      case 'quarterly':
+        return DateTime(startDate.year, startDate.month + 3, startDate.day);
+      default:
+        return startDate.add(const Duration(days: 7));
     }
   }
 
@@ -211,18 +151,10 @@ class _MagazineFormDialogState extends State<MagazineFormDialog> {
                 validator: (value) =>
                     value?.isEmpty ?? true ? 'Please enter a price' : null,
               ),
-              TextFormField(
-                controller: _issueNumberController,
-                decoration: const InputDecoration(labelText: 'Issue Number'),
-                keyboardType: TextInputType.number,
-                validator: (value) => value?.isEmpty ?? true
-                    ? 'Please enter an issue number'
-                    : null,
-              ),
               DropdownButtonFormField<String>(
                 value: _frequency,
                 decoration: const InputDecoration(labelText: 'Frequency'),
-                items: ['weekly', 'monthly', 'quarterly', 'yearly']
+                items: ['weekly', 'monthly', 'quarterly']
                     .map((f) => DropdownMenuItem(value: f, child: Text(f)))
                     .toList(),
                 onChanged: (value) => setState(() => _frequency = value!),
@@ -248,12 +180,6 @@ class _MagazineFormDialogState extends State<MagazineFormDialog> {
                     ? 'Select Cover Image'
                     : 'Change Cover Image'),
               ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: _pickPDFFile,
-                child: Text(
-                    _pdfFile == null ? 'Select PDF File' : 'Change PDF File'),
-              ),
             ],
           ),
         ),
@@ -271,5 +197,13 @@ class _MagazineFormDialogState extends State<MagazineFormDialog> {
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _priceController.dispose();
+    super.dispose();
   }
 }
