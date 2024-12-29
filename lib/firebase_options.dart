@@ -38,6 +38,8 @@ class DefaultFirebaseOptions {
     projectId: 'magazine-nexus',
     authDomain: 'magazine-nexus.firebaseapp.com',
     storageBucket: 'magazine-nexus.firebasestorage.app',
+    databaseURL:
+        'https://magazine-nexus-default-rtdb.asia-southeast1.firebasedatabase.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -46,6 +48,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1067444901462',
     projectId: 'magazine-nexus',
     storageBucket: 'magazine-nexus.firebasestorage.app',
+    databaseURL:
+        'https://magazine-nexus-default-rtdb.asia-southeast1.firebasedatabase.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -56,6 +60,8 @@ class DefaultFirebaseOptions {
     storageBucket: 'magazine-nexus.firebasestorage.app',
     iosClientId: 'YOUR_IOS_CLIENT_ID',
     iosBundleId: 'com.example.magazineNexus',
+    databaseURL:
+        'https://magazine-nexus-default-rtdb.asia-southeast1.firebasedatabase.app',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(

@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/firebase_auth_service.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -19,6 +20,8 @@ class _SignupPageState extends State<SignupPage> {
   final _authService = AuthService();
 
   bool _isLoading = false;
+  bool _showPassword = false;
+  bool _showConfirmPassword = false;
 
   @override
   void dispose() {
@@ -84,12 +87,22 @@ class _SignupPageState extends State<SignupPage> {
 
       try {
         // Create user account and session using AuthService
-        await _authService.createAccount(
+        final userCredential = await _authService.createAccount(
           email: _emailController.text,
           password: _passwordController.text,
           name: _nameController.text,
         );
 
+        // Save additional user details to Realtime Database
+        final userId = userCredential.user!.uid;
+        final databaseRef = FirebaseDatabase.instance.ref();
+        await databaseRef.child('users').child(userId).set({
+          'name': _nameController.text,
+          'email': _emailController.text,
+          'role': 'user', // Default role for new users
+          'createdAt': ServerValue.timestamp,
+          'lastLogin': ServerValue.timestamp,
+        });
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -249,11 +262,23 @@ class _SignupPageState extends State<SignupPage> {
                             decoration: InputDecoration(
                               labelText: 'Password',
                               prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _showPassword
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _showPassword = !_showPassword;
+                                  });
+                                },
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            obscureText: true,
+                            obscureText: !_showPassword,
                             enabled: !_isLoading,
                           ),
                           const SizedBox(height: 16),
@@ -264,11 +289,24 @@ class _SignupPageState extends State<SignupPage> {
                             decoration: InputDecoration(
                               labelText: 'Confirm Password',
                               prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _showConfirmPassword
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _showConfirmPassword =
+                                        !_showConfirmPassword;
+                                  });
+                                },
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            obscureText: true,
+                            obscureText: !_showConfirmPassword,
                             enabled: !_isLoading,
                           ),
                           const SizedBox(height: 24),

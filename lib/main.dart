@@ -5,16 +5,16 @@ import 'theme/app_theme.dart';
 import 'package:appwrite/appwrite.dart';
 import 'pages/home_page.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 import 'pages/settings_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'pages/admin/admin_panel_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    await Firebase.initializeApp();
     print('Firebase initialized successfully');
   } catch (e) {
     print('Failed to initialize Firebase: $e');
@@ -29,21 +29,55 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
+  Future<bool> _isUserAdmin(String uid) async {
+    final snapshot = await FirebaseDatabase.instance
+        .ref()
+        .child('users')
+        .child(uid)
+        .child('role')
+        .get();
+    return snapshot.exists && snapshot.value == 'admin';
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Magazine Nexus',
       theme: AppTheme.lightTheme,
-      initialRoute: '/main',
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasData) {
+            return FutureBuilder<bool>(
+              future: _isUserAdmin(snapshot.data!.uid),
+              builder: (context, adminSnapshot) {
+                if (adminSnapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (adminSnapshot.data == true) {
+                  return const AdminPanelPage(); // User is admin
+                }
+
+                return HomePage(); // Regular user
+              },
+            );
+          }
+
+          return const MyHomePage(title: 'Magazine Nexus');
+        },
+      ),
       debugShowCheckedModeBanner: false,
       routes: {
-        '/': (context) => HomePage(),
         '/settings': (context) => SettingsPage(),
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignupPage(),
         '/home': (context) => HomePage(),
-        '/main': (context) => const MyHomePage(title: 'Magazine Nexus'),
+        '/admin': (context) => const AdminPanelPage(),
       },
     );
   }

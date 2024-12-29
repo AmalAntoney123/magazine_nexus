@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 import '../services/firebase_auth_service.dart';
 import 'signup_page.dart';
@@ -23,6 +24,16 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  Future<bool> _isUserAdmin(String uid) async {
+    final snapshot = await FirebaseDatabase.instance
+        .ref()
+        .child('users')
+        .child(uid)
+        .child('role')
+        .get();
+    return snapshot.exists && snapshot.value == 'admin';
+  }
+
   void _handleLogin() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -40,15 +51,18 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final authService = AuthService();
-      await authService.login(
+      final userCredential = await authService.login(
         email: _emailController.text,
         password: _passwordController.text,
       );
 
       if (mounted) {
-        // Navigate to home page and remove all previous routes
-        Navigator.of(context)
-            .pushNamedAndRemoveUntil('/home', (route) => false);
+        // Check user role and navigate accordingly
+        final isAdmin = await _isUserAdmin(userCredential.user!.uid);
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          isAdmin ? '/admin' : '/home',
+          (route) => false,
+        );
       }
     } on FirebaseAuthException catch (e) {
       String errorMessage = 'Login failed';
