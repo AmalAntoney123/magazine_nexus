@@ -130,12 +130,12 @@ class LibraryPage extends StatelessWidget {
             }
 
             if (!magazinesSnapshot.hasData ||
-                magazinesSnapshot.data?.snapshot?.value == null) {
+                magazinesSnapshot.data?.snapshot.value == null) {
               return const Center(child: CircularProgressIndicator());
             }
 
             Map<dynamic, dynamic> allMagazines =
-                magazinesSnapshot.data!.snapshot!.value as Map;
+                magazinesSnapshot.data!.snapshot.value as Map;
 
             // Filter magazines to show only wishlisted ones
             Map<dynamic, dynamic> wishlistedMagazines = {};

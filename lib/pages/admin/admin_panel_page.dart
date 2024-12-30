@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:magazine_nexus/pages/admin/tabs/dashboard_tab.dart';
 import 'package:magazine_nexus/pages/admin/tabs/subscription_management_tab.dart';
 
@@ -16,7 +15,6 @@ class AdminPanelPage extends StatefulWidget {
 
 class _AdminPanelPageState extends State<AdminPanelPage>
     with SingleTickerProviderStateMixin {
-  final DatabaseReference _database = FirebaseDatabase.instance.ref();
   late TabController _tabController;
 
   @override
