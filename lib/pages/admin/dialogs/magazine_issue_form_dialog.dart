@@ -4,6 +4,7 @@ import 'dart:io';
 import '../../../models/magazine_issue.dart';
 import '../../../services/appwrite_service.dart';
 import 'package:firebase_database/firebase_database.dart';
+import '../../../widgets/common/bottom_modal.dart';
 
 class MagazineIssueFormDialog extends StatefulWidget {
   final String magazineId;
@@ -154,57 +155,139 @@ class _MagazineIssueFormDialogState extends State<MagazineIssueFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.existingIssue == null ? 'Add Issue' : 'Edit Issue'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Please enter a title' : null,
-              ),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
-                maxLines: 3,
-                validator: (value) => value?.isEmpty ?? true
-                    ? 'Please enter a description'
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _pickCoverImage,
-                child: Text(_coverImage == null
-                    ? 'Select Cover Image'
-                    : 'Change Cover Image'),
-              ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: _pickPDFFile,
-                child: Text(
-                    _pdfFile == null ? 'Select PDF File' : 'Change PDF File'),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return BottomModal(
+      title: widget.existingIssue == null ? 'Add Issue' : 'Edit Issue',
+      isLoading: _isLoading,
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
           onPressed: _isLoading ? null : _saveMagazineIssue,
-          child: _isLoading
-              ? const CircularProgressIndicator()
-              : const Text('Save'),
+          child: const Text('Save'),
         ),
       ],
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Title Input
+            TextFormField(
+              controller: _titleController,
+              decoration: InputDecoration(
+                labelText: 'Title',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surface,
+              ),
+              validator: (value) =>
+                  value?.isEmpty ?? true ? 'Please enter a title' : null,
+            ),
+            const SizedBox(height: 16),
+
+            // Description Input
+            TextFormField(
+              controller: _descriptionController,
+              decoration: InputDecoration(
+                labelText: 'Description',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surface,
+              ),
+              maxLines: 3,
+              validator: (value) =>
+                  value?.isEmpty ?? true ? 'Please enter a description' : null,
+            ),
+            const SizedBox(height: 24),
+
+            // File Selection Section
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Files',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Cover Image Section
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Cover Image',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: _pickCoverImage,
+                        icon: const Icon(Icons.image),
+                        label: Text(_coverImage == null
+                            ? 'Select Image'
+                            : 'Change Image'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 45),
+                        ),
+                      ),
+                      if (_coverImage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            'Selected: ${_coverImage!.path.split('/').last}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  // PDF File Section
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'PDF File',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: _pickPDFFile,
+                        icon: const Icon(Icons.picture_as_pdf),
+                        label: Text(
+                            _pdfFile == null ? 'Select PDF' : 'Change PDF'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 45),
+                        ),
+                      ),
+                      if (_pdfFile != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            'Selected: ${_pdfFile!.path.split('/').last}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

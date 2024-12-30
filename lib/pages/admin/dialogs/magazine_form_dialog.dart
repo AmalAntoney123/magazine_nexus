@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../../../models/magazine.dart';
 import '../../../services/appwrite_service.dart';
+import '../../../widgets/common/bottom_modal.dart';
 
 class MagazineFormDialog extends StatefulWidget {
   final Magazine? magazine;
@@ -122,68 +123,9 @@ class _MagazineFormDialogState extends State<MagazineFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.magazine == null ? 'Add Magazine' : 'Edit Magazine'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Please enter a title' : null,
-              ),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
-                maxLines: 3,
-                validator: (value) => value?.isEmpty ?? true
-                    ? 'Please enter a description'
-                    : null,
-              ),
-              TextFormField(
-                controller: _priceController,
-                decoration: const InputDecoration(labelText: 'Price'),
-                keyboardType: TextInputType.number,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Please enter a price' : null,
-              ),
-              DropdownButtonFormField<String>(
-                value: _frequency,
-                decoration: const InputDecoration(labelText: 'Frequency'),
-                items: ['weekly', 'monthly', 'quarterly']
-                    .map((f) => DropdownMenuItem(value: f, child: Text(f)))
-                    .toList(),
-                onChanged: (value) => setState(() => _frequency = value!),
-              ),
-              DropdownButtonFormField<String>(
-                value: _category,
-                decoration: const InputDecoration(labelText: 'Category'),
-                items: [
-                  'general',
-                  'sports',
-                  'technology',
-                  'lifestyle',
-                  'business'
-                ]
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
-                onChanged: (value) => setState(() => _category = value!),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _pickCoverImage,
-                child: Text(_coverImage == null
-                    ? 'Select Cover Image'
-                    : 'Change Cover Image'),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return BottomModal(
+      title: widget.magazine == null ? 'Add Magazine' : 'Edit Magazine',
+      isLoading: _isLoading,
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -191,11 +133,83 @@ class _MagazineFormDialogState extends State<MagazineFormDialog> {
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _saveMagazine,
-          child: _isLoading
-              ? const CircularProgressIndicator()
-              : const Text('Save'),
+          child: const Text('Save'),
         ),
       ],
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                labelText: 'Title',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) =>
+                  value?.isEmpty ?? true ? 'Please enter a title' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _descriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Description',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+              validator: (value) =>
+                  value?.isEmpty ?? true ? 'Please enter a description' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _priceController,
+              decoration: const InputDecoration(
+                labelText: 'Price',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              validator: (value) =>
+                  value?.isEmpty ?? true ? 'Please enter a price' : null,
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _frequency,
+              decoration: const InputDecoration(
+                labelText: 'Frequency',
+                border: OutlineInputBorder(),
+              ),
+              items: ['weekly', 'monthly', 'quarterly']
+                  .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                  .toList(),
+              onChanged: (value) => setState(() => _frequency = value!),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _category,
+              decoration: const InputDecoration(
+                labelText: 'Category',
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                'general',
+                'sports',
+                'technology',
+                'lifestyle',
+                'business'
+              ].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+              onChanged: (value) => setState(() => _category = value!),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _pickCoverImage,
+              child: Text(_coverImage == null
+                  ? 'Select Cover Image'
+                  : 'Change Cover Image'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
