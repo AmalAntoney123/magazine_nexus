@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../../services/appwrite_service.dart';
 import '../../services/wishlist_service.dart';
+import '../../widgets/subscription_modal.dart';
 
 class DiscoverPage extends StatefulWidget {
   const DiscoverPage({super.key});
@@ -208,14 +209,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
                         ElevatedButton.icon(
                           icon: const Icon(Icons.shopping_cart),
                           label: const Text('Subscribe'),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content:
-                                    Text('Subscription feature coming soon!'),
-                              ),
-                            );
-                          },
+                          onPressed: () =>
+                              _showSubscriptionModal(context, magazineData),
                         ),
                       ],
                     ),
@@ -225,6 +220,22 @@ class _DiscoverPageState extends State<DiscoverPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showSubscriptionModal(
+      BuildContext context, Map<dynamic, dynamic> magazineData) {
+    final basePrice = (magazineData['price'] as num).toDouble();
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SubscriptionModal(
+        magazineData: magazineData,
+        basePrice: basePrice,
       ),
     );
   }
