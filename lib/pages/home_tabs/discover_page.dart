@@ -81,7 +81,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
             },
           ),
         ),
-        const Divider(height: 12),
+        const Divider(height: 16),
       ],
     );
   }
