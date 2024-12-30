@@ -81,4 +81,25 @@ class AuthService {
   Stream<User?> authStateChanges() {
     return _auth.authStateChanges();
   }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final user = getCurrentUser();
+      if (user == null) throw Exception('No user logged in');
+
+      // Reauthenticate user before changing password
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+
+      await user.reauthenticateWithCredential(credential);
+      await user.updatePassword(newPassword);
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

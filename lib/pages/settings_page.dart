@@ -37,35 +37,7 @@ class SettingsPage extends StatelessWidget {
             leading: const Icon(Icons.person_outline),
             title: const Text('Account Settings'),
             onTap: () {
-              // Navigate to account settings
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.notifications_outlined),
-            title: const Text('Notifications'),
-            onTap: () {
-              // Navigate to notifications settings
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.payment_outlined),
-            title: const Text('Payment Methods'),
-            onTap: () {
-              // Navigate to payment settings
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.help_outline),
-            title: const Text('Help & Support'),
-            onTap: () {
-              // Navigate to help section
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text('About'),
-            onTap: () {
-              // Navigate to about section
+              Navigator.pushNamed(context, '/profile');
             },
           ),
           const Divider(),

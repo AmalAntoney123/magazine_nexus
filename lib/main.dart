@@ -9,6 +9,7 @@ import 'pages/settings_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'pages/admin/admin_panel_page.dart';
+import 'pages/profile_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -78,6 +79,7 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => const SignupPage(),
         '/home': (context) => HomePage(),
         '/admin': (context) => const AdminPanelPage(),
+        '/profile': (context) => ProfilePage(),
       },
     );
   }
