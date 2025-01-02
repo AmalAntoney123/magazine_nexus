@@ -8,8 +8,8 @@ import '../../pages/subscription_detail_page.dart';
 class SubscriptionsPage extends StatelessWidget {
   const SubscriptionsPage({super.key});
 
-  void _showSubscriptionModal(
-      BuildContext context, Map<dynamic, dynamic> magazineData) {
+  void _showSubscriptionModal(BuildContext context,
+      Map<dynamic, dynamic> magazineData, String subscriptionKey) {
     final basePrice = (magazineData['price'] as num).toDouble();
 
     showModalBottomSheet(
@@ -20,8 +20,20 @@ class SubscriptionsPage extends StatelessWidget {
       builder: (context) => SubscriptionModal(
         magazineData: magazineData,
         basePrice: basePrice,
+        existingSubscriptionKey: subscriptionKey,
       ),
     );
+  }
+
+  bool isSubscriptionActive(Map<String, dynamic> subscription) {
+    try {
+      final endDate = DateTime.parse(subscription['endDate']);
+      final now = DateTime.now();
+      return now.isBefore(endDate);
+    } catch (e) {
+      print('Error parsing date: $e');
+      return false;
+    }
   }
 
   @override
@@ -95,17 +107,19 @@ class SubscriptionsPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SubscriptionDetailPage(
-                            subscription: subscription,
-                            magazineData: magazineData,
-                          ),
-                        ),
-                      );
-                    },
+                    onTap: isSubscriptionActive(subscription)
+                        ? () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SubscriptionDetailPage(
+                                  subscription: subscription,
+                                  magazineData: magazineData,
+                                ),
+                              ),
+                            );
+                          }
+                        : null,
                     child: IntrinsicHeight(
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -116,14 +130,43 @@ class SubscriptionsPage extends StatelessWidget {
                               borderRadius: const BorderRadius.horizontal(
                                 left: Radius.circular(12),
                               ),
-                              child: Image.network(
-                                AppwriteService.getFilePreviewUrl(
-                                  bucketId: '67718720002aaa542f4d',
-                                  fileId: magazineData['coverUrl'],
-                                ).toString(),
-                                width: 100,
-                                height: 140,
-                                fit: BoxFit.cover,
+                              child: ColorFiltered(
+                                colorFilter: isSubscriptionActive(subscription)
+                                    ? const ColorFilter.mode(
+                                        Colors.transparent,
+                                        BlendMode.saturation,
+                                      )
+                                    : const ColorFilter.matrix([
+                                        0.2126,
+                                        0.7152,
+                                        0.0722,
+                                        0,
+                                        0,
+                                        0.2126,
+                                        0.7152,
+                                        0.0722,
+                                        0,
+                                        0,
+                                        0.2126,
+                                        0.7152,
+                                        0.0722,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        1,
+                                        0,
+                                      ]),
+                                child: Image.network(
+                                  AppwriteService.getFilePreviewUrl(
+                                    bucketId: '67718720002aaa542f4d',
+                                    fileId: magazineData['coverUrl'],
+                                  ).toString(),
+                                  width: 100,
+                                  height: 140,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
                           // Subscription Details
@@ -147,6 +190,10 @@ class SubscriptionsPage extends StatelessWidget {
                                             .titleMedium
                                             ?.copyWith(
                                               fontWeight: FontWeight.bold,
+                                              color: isSubscriptionActive(
+                                                      subscription)
+                                                  ? null
+                                                  : Colors.grey,
                                             ),
                                       ),
                                       if (magazineData['description'] !=
@@ -156,7 +203,13 @@ class SubscriptionsPage extends StatelessWidget {
                                           magazineData['description'],
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodySmall,
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: isSubscriptionActive(
+                                                        subscription)
+                                                    ? null
+                                                    : Colors.grey,
+                                              ),
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -176,26 +229,29 @@ class SubscriptionsPage extends StatelessWidget {
                                       Row(
                                         children: [
                                           _buildInfoChip(
-                                            icon: subscription['status'] ==
-                                                    'active'
+                                            icon: isSubscriptionActive(
+                                                    subscription)
                                                 ? Icons.check_circle
                                                 : Icons.error,
-                                            label: subscription['status'] ==
-                                                    'active'
+                                            label: isSubscriptionActive(
+                                                    subscription)
                                                 ? 'Active'
                                                 : 'Expired',
-                                            color: subscription['status'] ==
-                                                    'active'
+                                            color: isSubscriptionActive(
+                                                    subscription)
                                                 ? Colors.green
                                                 : Colors.red,
                                           ),
-                                          if (subscription['status'] !=
-                                              'active') ...[
+                                          if (!isSubscriptionActive(
+                                              subscription)) ...[
                                             const Spacer(),
                                             TextButton(
                                               onPressed: () =>
                                                   _showSubscriptionModal(
-                                                      context, magazineData),
+                                                      context,
+                                                      magazineData,
+                                                      subscriptions.keys
+                                                          .elementAt(index)),
                                               child:
                                                   const Text('Subscribe Again'),
                                             ),

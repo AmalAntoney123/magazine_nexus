@@ -6,11 +6,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 class SubscriptionModal extends StatefulWidget {
   final Map<dynamic, dynamic> magazineData;
   final double basePrice;
+  final String? existingSubscriptionKey;
 
   const SubscriptionModal({
     super.key,
     required this.magazineData,
     required this.basePrice,
+    this.existingSubscriptionKey,
   });
 
   @override
@@ -175,12 +177,23 @@ class _SubscriptionModalState extends State<SubscriptionModal> {
       'status': 'active',
     };
 
-    await FirebaseDatabase.instance
-        .ref()
-        .child('subscriptions')
-        .child(user.uid)
-        .push()
-        .set(subscriptionData);
+    if (widget.existingSubscriptionKey != null) {
+      // Update existing subscription
+      await FirebaseDatabase.instance
+          .ref()
+          .child('subscriptions')
+          .child(user.uid)
+          .child(widget.existingSubscriptionKey!)
+          .update(subscriptionData);
+    } else {
+      // Create new subscription
+      await FirebaseDatabase.instance
+          .ref()
+          .child('subscriptions')
+          .child(user.uid)
+          .push()
+          .set(subscriptionData);
+    }
 
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(

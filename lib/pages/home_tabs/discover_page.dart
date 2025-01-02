@@ -153,12 +153,30 @@ class _DiscoverPageState extends State<DiscoverPage> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  '₹${magazineData['price']}',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      '₹${magazineData['price']}',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    StreamBuilder(
+                      stream: FirebaseDatabase.instance
+                          .ref()
+                          .child('magazine_issues')
+                          .onValue,
+                      builder: (context, snapshot) {
+                        final issueCount = _getIssueCount(magazineId, snapshot);
+                        return Text(
+                          '$issueCount issues',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        );
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -360,6 +378,21 @@ class _DiscoverPageState extends State<DiscoverPage> {
                                 fontWeight: FontWeight.bold,
                               ),
                         ),
+                        const Text(' • '),
+                        StreamBuilder(
+                          stream: FirebaseDatabase.instance
+                              .ref()
+                              .child('magazine_issues')
+                              .onValue,
+                          builder: (context, snapshot) {
+                            final issueCount =
+                                _getIssueCount(magazineId, snapshot);
+                            return Text(
+                              '$issueCount issues',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            );
+                          },
+                        ),
                       ],
                     ),
                     const Spacer(),
@@ -416,6 +449,15 @@ class _DiscoverPageState extends State<DiscoverPage> {
         basePrice: basePrice,
       ),
     );
+  }
+
+  int _getIssueCount(String magazineId, AsyncSnapshot snapshot) {
+    if (!snapshot.hasData || snapshot.data?.snapshot?.value == null) return 0;
+
+    Map<dynamic, dynamic> issues = snapshot.data!.snapshot!.value as Map;
+    return issues.values
+        .where((issue) => issue['magazineId'] == magazineId)
+        .length;
   }
 
   @override
