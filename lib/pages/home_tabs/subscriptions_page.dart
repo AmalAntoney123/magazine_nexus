@@ -29,7 +29,11 @@ class SubscriptionsPage extends StatelessWidget {
     try {
       final endDate = DateTime.parse(subscription['endDate']);
       final now = DateTime.now();
-      return now.isBefore(endDate);
+
+      // Check if subscription is still active
+      if (now.isAfter(endDate)) return false;
+
+      return true;
     } catch (e) {
       print('Error parsing date: $e');
       return false;
@@ -223,7 +227,7 @@ class SubscriptionsPage extends StatelessWidget {
                                       _buildInfoChip(
                                         icon: Icons.calendar_today,
                                         label:
-                                            'Valid until: ${DateTime.parse(subscription['endDate']).toString().split(' ')[0]}',
+                                            'Valid until: ${DateTime.parse(subscription['endDate']).toString().split(' ')[0].split('-').reversed.join('-')}',
                                       ),
                                       const SizedBox(height: 8),
                                       Row(

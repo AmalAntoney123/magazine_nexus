@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'pages/login_page.dart';
 import 'pages/signup_page.dart';
 import 'theme/app_theme.dart';
-import 'package:appwrite/appwrite.dart';
 import 'pages/home_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -12,6 +11,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'pages/admin/admin_panel_page.dart';
 import 'pages/profile_page.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 // Add this function to handle background messages
 @pragma('vm:entry-point')
@@ -25,16 +25,10 @@ void main() async {
 
   try {
     await Firebase.initializeApp();
+    await NotificationService.initialize();
 
     // Initialize Firebase Cloud Messaging
     final fcm = FirebaseMessaging.instance;
-
-    // Request notification permissions
-    NotificationSettings settings = await fcm.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
 
     // Get FCM token
     String? token = await fcm.getToken();
@@ -53,13 +47,13 @@ void main() async {
       }
     });
 
+    // Check for expiring subscriptions
+    await NotificationService.checkExpiringSubscriptions();
+
     print('Firebase initialized successfully');
   } catch (e) {
     print('Failed to initialize Firebase: $e');
   }
-
-  Client client = Client();
-  client.setProject('676fc20b003ccf154826');
 
   runApp(const MyApp());
 }
@@ -176,6 +170,89 @@ class MyHomePage extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class NotificationService {
+  static final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
+
+  static Future<void> initialize() async {
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+
+    const settings =
+        InitializationSettings(android: androidSettings, iOS: iosSettings);
+
+    await _notifications.initialize(settings);
+  }
+
+  static Future<void> checkExpiringSubscriptions() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final subscriptionsSnapshot = await FirebaseDatabase.instance
+        .ref()
+        .child('subscriptions')
+        .child(user.uid)
+        .get();
+
+    if (!subscriptionsSnapshot.exists) return;
+
+    final subscriptions = Map<String, dynamic>.from(
+        subscriptionsSnapshot.value as Map<dynamic, dynamic>);
+
+    final now = DateTime.now();
+    final warningThreshold = Duration(days: 7); // Notify 7 days before expiry
+
+    for (var subscription in subscriptions.entries) {
+      final endDate = DateTime.parse(subscription.value['endDate']);
+      final timeUntilExpiry = endDate.difference(now);
+
+      if (timeUntilExpiry.isNegative) continue; // Skip expired subscriptions
+
+      if (timeUntilExpiry <= warningThreshold) {
+        final daysLeft = timeUntilExpiry.inDays;
+        await _showExpiryNotification(
+          subscription.value['magazineTitle'],
+          daysLeft,
+        );
+      }
+    }
+  }
+
+  static Future<void> _showExpiryNotification(
+      String magazineTitle, int daysLeft) async {
+    const androidDetails = AndroidNotificationDetails(
+      'subscription_expiry',
+      'Subscription Expiry',
+      channelDescription: 'Notifications for expiring subscriptions',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _notifications.show(
+      DateTime.now().millisecond, // Unique ID
+      'Subscription Expiring Soon',
+      'Your subscription to $magazineTitle will expire in $daysLeft days',
+      details,
     );
   }
 }
