@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/appwrite_service.dart';
 import '../../services/wishlist_service.dart';
 import '../../widgets/subscription_modal.dart';
@@ -179,34 +180,31 @@ class _DiscoverPageState extends State<DiscoverPage> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TextButton(
+                StreamBuilder(
+                  stream: FirebaseDatabase.instance
+                      .ref()
+                      .child(
+                          'subscriptions/${FirebaseAuth.instance.currentUser?.uid}')
+                      .onValue,
+                  builder: (context, snapshot) {
+                    final isSubscribed = _isSubscribed(snapshot, magazineId);
+
+                    return ElevatedButton.icon(
                       style: TextButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        backgroundColor: isSubscribed
+                            ? Colors.grey
+                            : Theme.of(context).colorScheme.primary,
                         foregroundColor: Colors.white,
                       ),
-                      onPressed: () => _showSubscriptionModal(
-                          context, magazineId, magazineData),
-                      child: const Text('Subscribe'),
-                    ),
-                    IconButton(
-                      icon: StreamBuilder(
-                        stream: WishlistService.getWishlist(),
-                        builder: (context, snapshot) {
-                          final wishlisted = snapshot.hasData &&
-                              (snapshot.data as Map).containsKey(magazineId);
-                          return Icon(
-                            wishlisted ? Icons.favorite : Icons.favorite_border,
-                            color: wishlisted ? Colors.red : null,
-                          );
-                        },
-                      ),
-                      onPressed: () =>
-                          WishlistService.toggleWishlist(magazineId),
-                    ),
-                  ],
+                      icon: Icon(
+                          isSubscribed ? Icons.check : Icons.shopping_cart),
+                      label: Text(isSubscribed ? 'Subscribed' : 'Subscribe'),
+                      onPressed: isSubscribed
+                          ? null
+                          : () => _showSubscriptionModal(
+                              context, magazineId, magazineData),
+                    );
+                  },
                 ),
               ],
             ),
@@ -421,16 +419,34 @@ class _DiscoverPageState extends State<DiscoverPage> {
                           onPressed: () =>
                               WishlistService.toggleWishlist(magazineId),
                         ),
-                        ElevatedButton.icon(
-                          style: TextButton.styleFrom(
-                            backgroundColor:
-                                Theme.of(context).colorScheme.primary,
-                            foregroundColor: Colors.white,
-                          ),
-                          icon: const Icon(Icons.shopping_cart),
-                          label: const Text('Subscribe'),
-                          onPressed: () => _showSubscriptionModal(
-                              context, magazineId, magazineData),
+                        StreamBuilder(
+                          stream: FirebaseDatabase.instance
+                              .ref()
+                              .child(
+                                  'subscriptions/${FirebaseAuth.instance.currentUser?.uid}')
+                              .onValue,
+                          builder: (context, snapshot) {
+                            final isSubscribed =
+                                _isSubscribed(snapshot, magazineId);
+
+                            return ElevatedButton.icon(
+                              style: TextButton.styleFrom(
+                                backgroundColor: isSubscribed
+                                    ? Colors.grey
+                                    : Theme.of(context).colorScheme.primary,
+                                foregroundColor: Colors.white,
+                              ),
+                              icon: Icon(isSubscribed
+                                  ? Icons.check
+                                  : Icons.shopping_cart),
+                              label: Text(
+                                  isSubscribed ? 'Subscribed' : 'Subscribe'),
+                              onPressed: isSubscribed
+                                  ? null
+                                  : () => _showSubscriptionModal(
+                                      context, magazineId, magazineData),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -467,6 +483,16 @@ class _DiscoverPageState extends State<DiscoverPage> {
     return issues.values
         .where((issue) => issue['magazineId'] == magazineId)
         .length;
+  }
+
+  bool _isSubscribed(AsyncSnapshot snapshot, String magazineId) {
+    if (!snapshot.hasData || snapshot.data?.snapshot?.value == null) {
+      return false;
+    }
+
+    Map<dynamic, dynamic> subscriptions = snapshot.data!.snapshot!.value as Map;
+    return subscriptions.values.any(
+        (sub) => sub['magazineId'] == magazineId && sub['status'] == 'active');
   }
 
   @override
