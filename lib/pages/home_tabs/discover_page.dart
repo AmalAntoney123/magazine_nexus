@@ -165,8 +165,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     TextButton(
-                      onPressed: () =>
-                          _showSubscriptionModal(context, magazineData),
+                      onPressed: () => _showSubscriptionModal(
+                          context, magazineId, magazineData),
                       child: const Text('Subscribe'),
                     ),
                     IconButton(
@@ -387,8 +387,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
                         ElevatedButton.icon(
                           icon: const Icon(Icons.shopping_cart),
                           label: const Text('Subscribe'),
-                          onPressed: () =>
-                              _showSubscriptionModal(context, magazineData),
+                          onPressed: () => _showSubscriptionModal(
+                              context, magazineId, magazineData),
                         ),
                       ],
                     ),
@@ -402,8 +402,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
     );
   }
 
-  void _showSubscriptionModal(
-      BuildContext context, Map<dynamic, dynamic> magazineData) {
+  void _showSubscriptionModal(BuildContext context, String magazineId,
+      Map<dynamic, dynamic> magazineData) {
     final basePrice = (magazineData['price'] as num).toDouble();
 
     showModalBottomSheet(
@@ -412,7 +412,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => SubscriptionModal(
-        magazineData: magazineData,
+        magazineData: {'id': magazineId, ...magazineData},
         basePrice: basePrice,
       ),
     );

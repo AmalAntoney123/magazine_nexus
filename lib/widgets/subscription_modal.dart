@@ -158,7 +158,6 @@ class _SubscriptionModalState extends State<SubscriptionModal> {
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    // Save subscription details
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
@@ -214,7 +213,6 @@ class _SubscriptionModalState extends State<SubscriptionModal> {
       'theme': {
         'color': '#3399cc', // You can customize this color
       }
-      
     };
 
     try {
