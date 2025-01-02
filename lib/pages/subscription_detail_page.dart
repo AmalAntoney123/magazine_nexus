@@ -87,7 +87,7 @@ class SubscriptionDetailPage extends StatelessWidget {
           if (issuesList.isEmpty) {
             return SingleChildScrollView(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   if (magazineData['coverUrl'] != null)
                     SizedBox(

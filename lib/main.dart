@@ -5,17 +5,54 @@ import 'theme/app_theme.dart';
 import 'package:appwrite/appwrite.dart';
 import 'pages/home_page.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 import 'pages/settings_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'pages/admin/admin_panel_page.dart';
 import 'pages/profile_page.dart';
 
+// Add this function to handle background messages
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("Handling a background message: ${message.messageId}");
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
     await Firebase.initializeApp();
+
+    // Initialize Firebase Cloud Messaging
+    final fcm = FirebaseMessaging.instance;
+
+    // Request notification permissions
+    NotificationSettings settings = await fcm.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    // Get FCM token
+    String? token = await fcm.getToken();
+    print('FCM Token: $token');
+
+    // Set up background message handler
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    // Handle foreground messages
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print('Got a message whilst in the foreground!');
+      print('Message data: ${message.data}');
+
+      if (message.notification != null) {
+        print('Message also contained a notification: ${message.notification}');
+      }
+    });
+
     print('Firebase initialized successfully');
   } catch (e) {
     print('Failed to initialize Firebase: $e');
