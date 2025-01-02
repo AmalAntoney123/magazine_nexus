@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../../services/appwrite_service.dart';
+import 'pdf_viewer_page.dart';
 
 class SubscriptionDetailPage extends StatelessWidget {
   final Map<String, dynamic> subscription;
@@ -135,7 +136,16 @@ class SubscriptionDetailPage extends StatelessWidget {
                             child: InkWell(
                               onTap: issue['pdfFileId'] != null
                                   ? () {
-                                      // Implement PDF download/view functionality
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => PdfViewerPage(
+                                            fileId: issue['pdfFileId'],
+                                            title: issue['title'] ??
+                                                'Issue ${issue['issueNumber']}',
+                                          ),
+                                        ),
+                                      );
                                     }
                                   : null,
                               child: Row(
@@ -195,11 +205,22 @@ class SubscriptionDetailPage extends StatelessWidget {
                                                   MainAxisAlignment.end,
                                               children: [
                                                 TextButton.icon(
-                                                  icon: const Icon(
-                                                      Icons.download),
-                                                  label: const Text('Download'),
+                                                  icon: const Icon(Icons.book),
+                                                  label: const Text('Read'),
                                                   onPressed: () {
-                                                    // Implement PDF download
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            PdfViewerPage(
+                                                          fileId: issue[
+                                                              'pdfFileId'],
+                                                          title: issue[
+                                                                  'title'] ??
+                                                              'Issue ${issue['issueNumber']}',
+                                                        ),
+                                                      ),
+                                                    );
                                                   },
                                                 ),
                                               ],

@@ -199,7 +199,7 @@ class _SubscriptionModalState extends State<SubscriptionModal> {
     if (user == null) return;
 
     var options = {
-      'key': 'rzp_test_1AC0p6RtIwwvLU', // Using your test key
+      'key': 'rzp_test_A5qkBsgXRI2VXo', // Using your test key
       'amount':
           (_calculatePrice(_selectedPeriod) * 100).toInt(), // Amount in paise
       'name': widget.magazineData['title'],
