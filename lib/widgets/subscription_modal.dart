@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SubscriptionModal extends StatefulWidget {
   final Map<dynamic, dynamic> magazineData;
@@ -17,6 +20,7 @@ class SubscriptionModal extends StatefulWidget {
 class _SubscriptionModalState extends State<SubscriptionModal> {
   String _selectedPeriod = '1_month'; // Default selection
   bool _showDetails = false;
+  late Razorpay _razorpay;
 
   final Map<String, Map<String, dynamic>> _subscriptionOptions = {
     '1_month': {
@@ -140,6 +144,89 @@ class _SubscriptionModalState extends State<SubscriptionModal> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+  }
+
+  @override
+  void dispose() {
+    _razorpay.clear();
+    super.dispose();
+  }
+
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    // Save subscription details
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final subscriptionData = {
+      'magazineId': widget.magazineData['id'],
+      'magazineTitle': widget.magazineData['title'],
+      'period': _selectedPeriod,
+      'startDate': DateTime.now().toIso8601String(),
+      'endDate': DateTime.now()
+          .add(Duration(
+              days: _subscriptionOptions[_selectedPeriod]!['multiplier'] * 30))
+          .toIso8601String(),
+      'paymentId': response.paymentId,
+      'amount': _calculatePrice(_selectedPeriod),
+      'status': 'active',
+    };
+
+    await FirebaseDatabase.instance
+        .ref()
+        .child('subscriptions')
+        .child(user.uid)
+        .push()
+        .set(subscriptionData);
+
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Subscription successful!')),
+    );
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Payment failed: ${response.message}')),
+    );
+  }
+
+  void _startPayment() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    var options = {
+      'key': 'rzp_test_1AC0p6RtIwwvLU', // Using your test key
+      'amount':
+          (_calculatePrice(_selectedPeriod) * 100).toInt(), // Amount in paise
+      'name': widget.magazineData['title'],
+      'description':
+          '${_subscriptionOptions[_selectedPeriod]!['label']} Subscription',
+      'prefill': {
+        'contact': user.phoneNumber ?? '',
+        'email': user.email ?? '',
+      },
+      'currency': 'INR', // Adding currency specification for India
+      'theme': {
+        'color': '#3399cc', // You can customize this color
+      }
+      
+    };
+
+    try {
+      _razorpay.open(options);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -174,15 +261,7 @@ class _SubscriptionModalState extends State<SubscriptionModal> {
             const SizedBox(height: 32),
             // Subscribe Button
             ElevatedButton(
-              onPressed: () {
-                // TODO: Implement payment processing
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Payment gateway integration coming soon!'),
-                  ),
-                );
-              },
+              onPressed: _startPayment,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle: const TextStyle(fontSize: 16),
