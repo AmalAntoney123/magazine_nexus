@@ -250,6 +250,10 @@ class MagazineDetailsPage extends StatelessWidget {
                           value: 'delete',
                           child: Text('Delete'),
                         ),
+                        const PopupMenuItem(
+                          value: 'updateStatus',
+                          child: Text('Update Delivery Status'),
+                        ),
                       ],
                       onSelected: (value) {
                         if (value == 'edit') {
@@ -270,6 +274,9 @@ class MagazineDetailsPage extends StatelessWidget {
                           );
                         } else if (value == 'delete') {
                           _deleteIssue(issueId);
+                        } else if (value == 'updateStatus') {
+                          _showDeliveryStatusDialog(context, issueId,
+                              issueData['deliveryStatus'] ?? 'pending');
                         }
                       },
                     ),
@@ -337,5 +344,66 @@ class MagazineDetailsPage extends StatelessWidget {
         magazine: magazine,
       ),
     );
+  }
+
+  void _showDeliveryStatusDialog(
+      BuildContext context, String issueId, String currentStatus) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Update Delivery Status'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Pending'),
+              leading: Radio<String>(
+                value: 'pending',
+                groupValue: currentStatus,
+                onChanged: (value) =>
+                    _updateDeliveryStatus(dialogContext, issueId, value!),
+              ),
+            ),
+            ListTile(
+              title: const Text('In Transit'),
+              leading: Radio<String>(
+                value: 'in_transit',
+                groupValue: currentStatus,
+                onChanged: (value) =>
+                    _updateDeliveryStatus(dialogContext, issueId, value!),
+              ),
+            ),
+            ListTile(
+              title: const Text('Delivered'),
+              leading: Radio<String>(
+                value: 'delivered',
+                groupValue: currentStatus,
+                onChanged: (value) =>
+                    _updateDeliveryStatus(dialogContext, issueId, value!),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _updateDeliveryStatus(
+      BuildContext context, String issueId, String status) async {
+    try {
+      await FirebaseDatabase.instance
+          .ref()
+          .child('magazine_issues/$issueId')
+          .update({'deliveryStatus': status});
+      Navigator.pop(context);
+    } catch (e) {
+      debugPrint('Error updating delivery status: $e');
+    }
   }
 }

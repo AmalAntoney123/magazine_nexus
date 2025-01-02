@@ -84,6 +84,70 @@ class SubscriptionDetailPage extends StatelessWidget {
               .map((e) => {...Map<String, dynamic>.from(e.value), 'id': e.key})
               .toList();
 
+          if (issuesList.isEmpty) {
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (magazineData['coverUrl'] != null)
+                    SizedBox(
+                      width: double.infinity,
+                      height: 250,
+                      child: Image.network(
+                        AppwriteService.getFilePreviewUrl(
+                          bucketId: '67718720002aaa542f4d',
+                          fileId: magazineData['coverUrl'],
+                        ).toString(),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          magazineData['title'] ?? 'Unknown Magazine',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        if (magazineData['description'] != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            magazineData['description'],
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
+                        const SizedBox(height: 40),
+                        Icon(
+                          Icons.upcoming_outlined,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Stay Tuned!',
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'New issues are coming soon.',
+                          style:
+                              Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,6 +263,32 @@ class SubscriptionDetailPage extends StatelessWidget {
                                             ),
                                           ],
                                           const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                _getDeliveryStatusIcon(
+                                                    issue['deliveryStatus'] ??
+                                                        'pending'),
+                                                size: 16,
+                                                color: _getDeliveryStatusColor(
+                                                    issue['deliveryStatus'] ??
+                                                        'pending'),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                _getDeliveryStatusText(
+                                                    issue['deliveryStatus'] ??
+                                                        'pending'),
+                                                style: TextStyle(
+                                                  color: _getDeliveryStatusColor(
+                                                      issue['deliveryStatus'] ??
+                                                          'pending'),
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
                                           if (issue['pdfFileId'] != null)
                                             Row(
                                               mainAxisAlignment:
@@ -265,5 +355,38 @@ class SubscriptionDetailPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  IconData _getDeliveryStatusIcon(String status) {
+    switch (status) {
+      case 'delivered':
+        return Icons.check_circle;
+      case 'in_transit':
+        return Icons.local_shipping;
+      default:
+        return Icons.pending;
+    }
+  }
+
+  Color _getDeliveryStatusColor(String status) {
+    switch (status) {
+      case 'delivered':
+        return Colors.green;
+      case 'in_transit':
+        return Colors.blue;
+      default:
+        return Colors.orange;
+    }
+  }
+
+  String _getDeliveryStatusText(String status) {
+    switch (status) {
+      case 'delivered':
+        return 'Delivered';
+      case 'in_transit':
+        return 'In Transit';
+      default:
+        return 'Pending';
+    }
   }
 }

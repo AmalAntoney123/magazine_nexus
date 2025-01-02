@@ -183,6 +183,10 @@ class _DiscoverPageState extends State<DiscoverPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Colors.white,
+                      ),
                       onPressed: () => _showSubscriptionModal(
                           context, magazineId, magazineData),
                       child: const Text('Subscribe'),
@@ -418,6 +422,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
                               WishlistService.toggleWishlist(magazineId),
                         ),
                         ElevatedButton.icon(
+                          style: TextButton.styleFrom(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
+                            foregroundColor: Colors.white,
+                          ),
                           icon: const Icon(Icons.shopping_cart),
                           label: const Text('Subscribe'),
                           onPressed: () => _showSubscriptionModal(

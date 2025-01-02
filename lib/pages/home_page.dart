@@ -4,7 +4,6 @@ import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.da
 import '../services/firebase_auth_service.dart';
 import 'home_tabs/discover_page.dart';
 import 'home_tabs/subscriptions_page.dart';
-import 'home_tabs/cart_page.dart';
 import 'home_tabs/library_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -21,14 +20,12 @@ class _HomePageState extends State<HomePage> {
   final List<IconData> _iconList = [
     Icons.explore,
     Icons.subscriptions,
-    Icons.shopping_cart,
     Icons.library_books,
   ];
 
   final List<String> _tabLabels = [
     'Discover',
     'Subscriptions',
-    'Cart',
     'Library',
   ];
 
@@ -81,8 +78,6 @@ class _HomePageState extends State<HomePage> {
       case 1:
         return const SubscriptionsPage();
       case 2:
-        return const CartPage();
-      case 3:
         return const LibraryPage();
       default:
         return const DiscoverPage();
