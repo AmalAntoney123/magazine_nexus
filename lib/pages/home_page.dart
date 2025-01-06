@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
+import 'package:magazine_nexus/pages/home_tabs/search_page.dart';
 
 import '../services/firebase_auth_service.dart';
 import 'home_tabs/discover_page.dart';
@@ -19,12 +20,14 @@ class _HomePageState extends State<HomePage> {
 
   final List<IconData> _iconList = [
     Icons.explore,
+    Icons.search,
     Icons.subscriptions,
     Icons.library_books,
   ];
 
   final List<String> _tabLabels = [
     'Discover',
+    'Search',
     'Subscriptions',
     'Library',
   ];
@@ -76,8 +79,10 @@ class _HomePageState extends State<HomePage> {
       case 0:
         return const DiscoverPage();
       case 1:
-        return const SubscriptionsPage();
+        return const SearchPage();
       case 2:
+        return const SubscriptionsPage();
+      case 3:
         return const LibraryPage();
       default:
         return const DiscoverPage();

@@ -84,75 +84,10 @@ class SubscriptionDetailPage extends StatelessWidget {
               .map((e) => {...Map<String, dynamic>.from(e.value), 'id': e.key})
               .toList();
 
-          if (issuesList.isEmpty) {
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  if (magazineData['coverUrl'] != null)
-                    SizedBox(
-                      width: double.infinity,
-                      height: 250,
-                      child: Image.network(
-                        AppwriteService.getFilePreviewUrl(
-                          bucketId: '67718720002aaa542f4d',
-                          fileId: magazineData['coverUrl'],
-                        ).toString(),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          magazineData['title'] ?? 'Unknown Magazine',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        if (magazineData['description'] != null) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            magazineData['description'],
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ],
-                        const SizedBox(height: 40),
-                        Icon(
-                          Icons.upcoming_outlined,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Stay Tuned!',
-                          style:
-                              Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'New issues are coming soon.',
-                          style:
-                              Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Full-width Magazine Cover
                 if (magazineData['coverUrl'] != null)
                   SizedBox(
                     width: double.infinity,
@@ -172,159 +107,212 @@ class SubscriptionDetailPage extends StatelessWidget {
                     children: [
                       Text(
                         magazineData['title'] ?? 'Unknown Magazine',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       if (magazineData['description'] != null) ...[
                         const SizedBox(height: 8),
                         Text(
                           magazineData['description'],
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.grey.shade600,
+                                  ),
                         ),
                       ],
                       const SizedBox(height: 24),
                       Text(
                         'Magazine Issues',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 16),
-                      // Wide Issue Cards
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: issuesList.length,
-                        itemBuilder: (context, index) {
-                          final issue = issuesList[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            clipBehavior: Clip.antiAlias,
-                            child: InkWell(
-                              onTap: issue['pdfFileId'] != null
-                                  ? () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => PdfViewerPage(
-                                            fileId: issue['pdfFileId'],
-                                            title: issue['title'] ??
-                                                'Issue ${issue['issueNumber']}',
+                      if (issuesList.isEmpty)
+                        Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.upcoming_outlined,
+                                size: 64,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Stay Tuned!',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(
+                                      color: Colors.grey[600],
+                                    ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'New issues are coming soon.',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(
+                                      color: Colors.grey[600],
+                                    ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: issuesList.length,
+                          itemBuilder: (context, index) {
+                            final issue = issuesList[index];
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              elevation: 4,
+                              shadowColor: Colors.black26,
+                              color: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                onTap: issue['pdfFileId'] != null
+                                    ? () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => PdfViewerPage(
+                                              fileId: issue['pdfFileId'],
+                                              title: issue['title'] ??
+                                                  'Issue ${issue['issueNumber']}',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    : null,
+                                child: Row(
+                                  children: [
+                                    if (issue['coverUrl'] != null)
+                                      SizedBox(
+                                        width: 120,
+                                        child: AspectRatio(
+                                          aspectRatio: 3 / 4,
+                                          child: Image.network(
+                                            AppwriteService.getFilePreviewUrl(
+                                              bucketId: '67718720002aaa542f4d',
+                                              fileId: issue['coverUrl'],
+                                            ).toString(),
+                                            fit: BoxFit.cover,
                                           ),
                                         ),
-                                      );
-                                    }
-                                  : null,
-                              child: Row(
-                                children: [
-                                  if (issue['coverUrl'] != null)
-                                    SizedBox(
-                                      width: 120,
-                                      height: 160,
-                                      child: Image.network(
-                                        AppwriteService.getFilePreviewUrl(
-                                          bucketId: '67718720002aaa542f4d',
-                                          fileId: issue['coverUrl'],
-                                        ).toString(),
-                                        fit: BoxFit.cover,
                                       ),
-                                    ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            issue['title'] ??
-                                                'Issue ${issue['issueNumber']}',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            'Published: ${DateTime.parse(issue['publishDate']).toString().split(' ')[0]}',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
-                                                  color: Colors.grey[600],
-                                                ),
-                                          ),
-                                          if (issue['description'] != null) ...[
-                                            const SizedBox(height: 8),
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
                                             Text(
-                                              issue['description'],
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
+                                              issue['title'] ??
+                                                  'Issue ${issue['issueNumber']}',
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyMedium,
+                                                  .titleMedium
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
                                             ),
-                                          ],
-                                          const SizedBox(height: 8),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                _getDeliveryStatusIcon(
-                                                    issue['deliveryStatus'] ??
-                                                        'pending'),
-                                                size: 16,
-                                                color: _getDeliveryStatusColor(
-                                                    issue['deliveryStatus'] ??
-                                                        'pending'),
-                                              ),
-                                              const SizedBox(width: 4),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'Published: ${DateTime.parse(issue['publishDate']).toString().split(' ')[0]}',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: Colors.grey[600],
+                                                  ),
+                                            ),
+                                            if (issue['description'] !=
+                                                null) ...[
+                                              const SizedBox(height: 8),
                                               Text(
-                                                _getDeliveryStatusText(
-                                                    issue['deliveryStatus'] ??
-                                                        'pending'),
-                                                style: TextStyle(
+                                                issue['description'],
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyMedium
+                                                    ?.copyWith(
+                                                      color: Colors.grey[600],
+                                                    ),
+                                              ),
+                                            ],
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  _getDeliveryStatusIcon(
+                                                      issue['deliveryStatus'] ??
+                                                          'pending'),
+                                                  size: 16,
                                                   color: _getDeliveryStatusColor(
                                                       issue['deliveryStatus'] ??
                                                           'pending'),
-                                                  fontWeight: FontWeight.bold,
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          if (issue['pdfFileId'] != null)
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.end,
-                                              children: [
-                                                TextButton.icon(
-                                                  icon: const Icon(Icons.book),
-                                                  label: const Text('Read'),
-                                                  onPressed: () {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            PdfViewerPage(
-                                                          fileId: issue[
-                                                              'pdfFileId'],
-                                                          title: issue[
-                                                                  'title'] ??
-                                                              'Issue ${issue['issueNumber']}',
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  _getDeliveryStatusText(
+                                                      issue['deliveryStatus'] ??
+                                                          'pending'),
+                                                  style: TextStyle(
+                                                    color: _getDeliveryStatusColor(
+                                                        issue['deliveryStatus'] ??
+                                                            'pending'),
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                if (issue['pdfFileId'] !=
+                                                    null) ...[
+                                                  const Spacer(),
+                                                  TextButton.icon(
+                                                    icon:
+                                                        const Icon(Icons.book),
+                                                    label: const Text('Read'),
+                                                    onPressed: () {
+                                                      Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              PdfViewerPage(
+                                                            fileId: issue[
+                                                                'pdfFileId'],
+                                                            title: issue[
+                                                                    'title'] ??
+                                                                'Issue ${issue['issueNumber']}',
+                                                          ),
                                                         ),
-                                                      ),
-                                                    );
-                                                  },
-                                                ),
+                                                      );
+                                                    },
+                                                  ),
+                                                ],
                                               ],
                                             ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
+                            );
+                          },
+                        ),
                     ],
                   ),
                 ),

@@ -92,8 +92,6 @@ class SubscriptionsPage extends StatelessWidget {
               itemBuilder: (context, index) {
                 final subscription = Map<String, dynamic>.from(
                     subscriptions.values.elementAt(index));
-
-                // Find the magazine using the title
                 final magazine = magazines.entries.firstWhere(
                   (entry) =>
                       entry.value['title'] == subscription['magazineTitle'],
@@ -105,11 +103,14 @@ class SubscriptionsPage extends StatelessWidget {
                 };
 
                 return Card(
-                  elevation: 2,
+                  elevation: 4,
+                  shadowColor: Colors.black26,
+                  color: Colors.white,
                   margin: const EdgeInsets.only(bottom: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
+                  clipBehavior: Clip.antiAlias,
                   child: InkWell(
                     onTap: isSubscriptionActive(subscription)
                         ? () {
@@ -124,152 +125,145 @@ class SubscriptionsPage extends StatelessWidget {
                             );
                           }
                         : null,
-                    child: IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Magazine Cover
-                          if (magazineData['coverUrl'] != null)
-                            ClipRRect(
-                              borderRadius: const BorderRadius.horizontal(
-                                left: Radius.circular(12),
-                              ),
-                              child: ColorFiltered(
-                                colorFilter: isSubscriptionActive(subscription)
-                                    ? const ColorFilter.mode(
-                                        Colors.transparent,
-                                        BlendMode.saturation,
-                                      )
-                                    : const ColorFilter.matrix([
-                                        0.2126,
-                                        0.7152,
-                                        0.0722,
-                                        0,
-                                        0,
-                                        0.2126,
-                                        0.7152,
-                                        0.0722,
-                                        0,
-                                        0,
-                                        0.2126,
-                                        0.7152,
-                                        0.0722,
-                                        0,
-                                        0,
-                                        0,
-                                        0,
-                                        0,
-                                        1,
-                                        0,
-                                      ]),
-                                child: Image.network(
-                                  AppwriteService.getFilePreviewUrl(
-                                    bucketId: '67718720002aaa542f4d',
-                                    fileId: magazineData['coverUrl'],
-                                  ).toString(),
-                                  width: 100,
-                                  height: 140,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                          // Subscription Details
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        subscription['magazineTitle'] ??
-                                            'Unknown Magazine',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              color: isSubscriptionActive(
-                                                      subscription)
-                                                  ? null
-                                                  : Colors.grey,
-                                            ),
-                                      ),
-                                      if (magazineData['description'] !=
-                                          null) ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          magazineData['description'],
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                color: isSubscriptionActive(
-                                                        subscription)
-                                                    ? null
-                                                    : Colors.grey,
-                                              ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      _buildInfoChip(
-                                        icon: Icons.calendar_today,
-                                        label:
-                                            'Valid until: ${DateTime.parse(subscription['endDate']).toString().split(' ')[0].split('-').reversed.join('-')}',
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          _buildInfoChip(
-                                            icon: isSubscriptionActive(
-                                                    subscription)
-                                                ? Icons.check_circle
-                                                : Icons.error,
-                                            label: isSubscriptionActive(
-                                                    subscription)
-                                                ? 'Active'
-                                                : 'Expired',
-                                            color: isSubscriptionActive(
-                                                    subscription)
-                                                ? Colors.green
-                                                : Colors.red,
-                                          ),
-                                          if (!isSubscriptionActive(
-                                              subscription)) ...[
-                                            const Spacer(),
-                                            TextButton(
-                                              onPressed: () =>
-                                                  _showSubscriptionModal(
-                                                      context,
-                                                      magazineData,
-                                                      subscriptions.keys
-                                                          .elementAt(index)),
-                                              child:
-                                                  const Text('Subscribe Again'),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (magazineData['coverUrl'] != null)
+                          SizedBox(
+                            width: 120,
+                            height: 160,
+                            child: ColorFiltered(
+                              colorFilter: isSubscriptionActive(subscription)
+                                  ? const ColorFilter.mode(
+                                      Colors.transparent,
+                                      BlendMode.saturation,
+                                    )
+                                  : const ColorFilter.matrix([
+                                      0.2126,
+                                      0.7152,
+                                      0.0722,
+                                      0,
+                                      0,
+                                      0.2126,
+                                      0.7152,
+                                      0.0722,
+                                      0,
+                                      0,
+                                      0.2126,
+                                      0.7152,
+                                      0.0722,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      1,
+                                      0,
+                                    ]),
+                              child: Image.network(
+                                AppwriteService.getFilePreviewUrl(
+                                  bucketId: '67718720002aaa542f4d',
+                                  fileId: magazineData['coverUrl'],
+                                ).toString(),
+                                fit: BoxFit.cover,
                               ),
                             ),
                           ),
-                        ],
-                      ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  subscription['magazineTitle'] ??
+                                      'Unknown Magazine',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color:
+                                            isSubscriptionActive(subscription)
+                                                ? null
+                                                : Colors.grey,
+                                      ),
+                                ),
+                                if (magazineData['description'] != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    magazineData['description'],
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color:
+                                              isSubscriptionActive(subscription)
+                                                  ? Colors.grey.shade600
+                                                  : Colors.grey,
+                                        ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                                const SizedBox(height: 12),
+                                _buildInfoChip(
+                                  icon: Icons.calendar_today,
+                                  label:
+                                      'Valid until: ${DateTime.parse(subscription['endDate']).toString().split(' ')[0].split('-').reversed.join('-')}',
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    _buildInfoChip(
+                                      icon: isSubscriptionActive(subscription)
+                                          ? Icons.check_circle
+                                          : Icons.error,
+                                      label: isSubscriptionActive(subscription)
+                                          ? 'Active'
+                                          : 'Expired',
+                                      color: isSubscriptionActive(subscription)
+                                          ? Colors.green
+                                          : Colors.red,
+                                    ),
+                                    if (!isSubscriptionActive(
+                                        subscription)) ...[
+                                      const Spacer(),
+                                      ElevatedButton(
+                                        onPressed: () => _showSubscriptionModal(
+                                          context,
+                                          magazineData,
+                                          subscriptions.keys.elementAt(index),
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 8),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'Subscribe Again',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 );

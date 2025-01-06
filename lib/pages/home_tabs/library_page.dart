@@ -9,33 +9,30 @@ class LibraryPage extends StatelessWidget {
   Widget _buildMagazineCard(BuildContext context, String magazineId,
       Map<dynamic, dynamic> magazineData) {
     return Card(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 4,
+      shadowColor: Colors.black26,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
+            SizedBox(
               width: 120,
-              height: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(4),
-                  bottomLeft: Radius.circular(4),
-                ),
-                image: DecorationImage(
-                  fit: BoxFit.cover,
-                  image: NetworkImage(
-                    AppwriteService.getFilePreviewUrl(
-                      bucketId: '67718720002aaa542f4d',
-                      fileId: magazineData['coverUrl'],
-                    ).toString(),
-                  ),
-                ),
+              height: 65,
+              child: Image.network(
+                AppwriteService.getFilePreviewUrl(
+                  bucketId: '67718720002aaa542f4d',
+                  fileId: magazineData['coverUrl'],
+                ).toString(),
+                fit: BoxFit.cover,
               ),
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -44,19 +41,34 @@ class LibraryPage extends StatelessWidget {
                         Expanded(
                           child: Text(
                             magazineData['title'] ?? 'Untitled',
-                            style: Theme.of(context).textTheme.titleLarge,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.favorite, color: Colors.red),
                           onPressed: () =>
                               WishlistService.toggleWishlist(magazineId),
+                          constraints: const BoxConstraints(
+                            minWidth: 40,
+                            minHeight: 40,
+                          ),
+                          padding: EdgeInsets.zero,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Text(
                       magazineData['description'] ?? 'No description',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.grey.shade600,
+                          ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -65,9 +77,17 @@ class LibraryPage extends StatelessWidget {
                       children: [
                         Text(
                           magazineData['frequency'] ?? '',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
-                        const Text(' • '),
+                        if (magazineData['frequency'] != null) ...[
+                          const Text(' • '),
+                        ],
                         Text(
                           '₹${magazineData['price']}',
                           style: Theme.of(context)

@@ -25,8 +25,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
   int? totalPages;
   int currentPage = 0;
   bool isReady = false;
-  double _currentScale = 1.0;
-  double _baseScale = 1.0;
+  PDFViewController? pdfController;
 
   @override
   void initState() {
@@ -37,9 +36,6 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
   Future<void> loadPdf() async {
     setState(() => isLoading = true);
     try {
-      print('Attempting to load PDF with ID: ${widget.fileId}');
-      print('Using bucket ID: 67718396003a69711df7');
-
       try {
         final bytes = await AppwriteService.storage.getFileDownload(
           bucketId: '67718396003a69711df7',
@@ -57,14 +53,10 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
           });
         }
       } catch (storageError) {
-        print('Storage API Error: $storageError');
-
         final url = AppwriteService.getFileDownloadUrl(
           bucketId: '67718396003a69711df7',
           fileId: widget.fileId,
         );
-
-        print('Fallback: Attempting to download PDF from: $url');
 
         final response = await http.get(
           url,
@@ -76,11 +68,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
           },
         );
 
-        print('Response status code: ${response.statusCode}');
-        print('Response headers: ${response.headers}');
-
         if (response.statusCode != 200) {
-          print('Response body: ${response.body}');
           throw Exception(
               'Failed to download PDF: ${response.statusCode} - ${response.body}');
         }
@@ -97,9 +85,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
           });
         }
       }
-    } catch (e, stackTrace) {
-      print('Error loading PDF: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
       if (mounted) {
         setState(() => isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -121,43 +107,6 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
-        bottom: isReady
-            ? PreferredSize(
-                preferredSize: const Size.fromHeight(32),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Page ${currentPage + 1} of $totalPages',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            : null,
-        actions: [
-          if (isReady) ...[
-            IconButton(
-              icon: const Icon(Icons.zoom_in),
-              onPressed: () {
-                setState(() {
-                  _currentScale = (_currentScale + 0.25).clamp(1.0, 3.0);
-                });
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.zoom_out),
-              onPressed: () {
-                setState(() {
-                  _currentScale = (_currentScale - 0.25).clamp(1.0, 3.0);
-                });
-              },
-            ),
-          ],
-        ],
       ),
       body: isLoading
           ? const Center(
@@ -203,6 +152,9 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                           isReady = true;
                         });
                       },
+                      onViewCreated: (PDFViewController controller) {
+                        pdfController = controller;
+                      },
                       onPageChanged: (page, total) {
                         setState(() {
                           currentPage = page ?? 0;
@@ -240,9 +192,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                                 mini: true,
                                 onPressed: currentPage > 0
                                     ? () {
-                                        setState(() {
-                                          currentPage--;
-                                        });
+                                        pdfController?.setPage(currentPage - 1);
                                       }
                                     : null,
                                 child: const Icon(Icons.navigate_before),
@@ -268,9 +218,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                                 onPressed: totalPages != null &&
                                         currentPage < totalPages! - 1
                                     ? () {
-                                        setState(() {
-                                          currentPage++;
-                                        });
+                                        pdfController?.setPage(currentPage + 1);
                                       }
                                     : null,
                                 child: const Icon(Icons.navigate_next),
@@ -281,52 +229,6 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                       ),
                   ],
                 ),
-      floatingActionButton: isReady
-          ? FloatingActionButton(
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  builder: (context) => Container(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Go to Page',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  hintText: 'Enter page number (1-$totalPages)',
-                                ),
-                                onSubmitted: (value) {
-                                  final page = int.tryParse(value);
-                                  if (page != null &&
-                                      page > 0 &&
-                                      page <= totalPages!) {
-                                    setState(() {
-                                      currentPage = page - 1;
-                                    });
-                                    Navigator.pop(context);
-                                  }
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-              child: const Icon(Icons.search),
-            )
-          : null,
     );
   }
 }
