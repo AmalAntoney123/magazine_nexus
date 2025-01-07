@@ -10,6 +10,7 @@ class SearchResult {
   final String fileId;
   final String context;
   final int pageNumber;
+  final String matchedText;
 
   SearchResult({
     required this.magazineId,
@@ -17,6 +18,7 @@ class SearchResult {
     required this.fileId,
     required this.context,
     required this.pageNumber,
+    required this.matchedText,
   });
 }
 
@@ -71,23 +73,19 @@ class LocalSearchService {
             final pageText = extractor.extractText(startPageIndex: i);
 
             if (pageText.toLowerCase().contains(keyword.toLowerCase())) {
-              // Find the context around the keyword
-              final words = pageText.split(' ');
-              final keywordIndex = words.indexWhere(
-                  (word) => word.toLowerCase().contains(keyword.toLowerCase()));
-
-              if (keywordIndex != -1) {
-                final startIndex = (keywordIndex - 5).clamp(0, words.length);
-                final endIndex = (keywordIndex + 5).clamp(0, words.length);
-                final context = words.sublist(startIndex, endIndex).join(' ');
-
-                results.add(SearchResult(
-                  magazineId: file.$id,
-                  magazineTitle: file.name,
-                  fileId: file.$id,
-                  context: '...${context.trim()}...',
-                  pageNumber: i + 1,
-                ));
+              // Find the line containing the keyword
+              final lines = pageText.split('\n');
+              for (var line in lines) {
+                if (line.toLowerCase().contains(keyword.toLowerCase())) {
+                  results.add(SearchResult(
+                    magazineId: file.$id,
+                    magazineTitle: file.name,
+                    fileId: file.$id,
+                    context: line.trim(),
+                    matchedText: keyword,
+                    pageNumber: i + 1,
+                  ));
+                }
               }
             }
           }
