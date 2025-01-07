@@ -116,4 +116,35 @@ class NotificationService {
       details,
     );
   }
+
+  static Future<void> showDeliveryNotification({
+    required String magazineTitle,
+    required String issueTitle,
+  }) async {
+    const androidDetails = AndroidNotificationDetails(
+      'delivery_notification',
+      'Delivery Notifications',
+      channelDescription: 'Notifications for magazine deliveries',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _notifications.show(
+      DateTime.now().millisecond, // Unique ID
+      'Magazine Delivered',
+      'Your issue "$issueTitle" of $magazineTitle has been delivered!',
+      details,
+    );
+  }
 }

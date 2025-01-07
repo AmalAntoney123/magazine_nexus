@@ -6,6 +6,7 @@ import '../dialogs/magazine_issue_form_dialog.dart';
 import '../../../services/appwrite_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../dialogs/magazine_form_dialog.dart';
+import '../../../services/notification_service.dart';
 
 class MagazineDetailsPage extends StatelessWidget {
   final Magazine magazine;
@@ -401,9 +402,60 @@ class MagazineDetailsPage extends StatelessWidget {
           .ref()
           .child('magazine_issues/$issueId')
           .update({'deliveryStatus': status});
-      Navigator.pop(context);
+
+      // If status is "delivered", send a notification
+      if (status == 'delivered') {
+        // Get the issue details
+        final issueSnapshot = await FirebaseDatabase.instance
+            .ref()
+            .child('magazine_issues/$issueId')
+            .get();
+
+        if (issueSnapshot.exists) {
+          final issueData = issueSnapshot.value as Map<dynamic, dynamic>;
+          final magazineId = issueData['magazineId'] as String;
+
+          // Get magazine details
+          final magazineSnapshot = await FirebaseDatabase.instance
+              .ref()
+              .child('magazines/$magazineId')
+              .get();
+
+          if (magazineSnapshot.exists) {
+            final magazineData =
+                magazineSnapshot.value as Map<dynamic, dynamic>;
+            final magazineTitle = magazineData['title'] as String;
+            final issueTitle = issueData['title'] as String;
+
+            // Show notification
+            await NotificationService.showDeliveryNotification(
+              magazineTitle: magazineTitle,
+              issueTitle: issueTitle,
+            );
+          }
+        }
+      }
+
+      if (context.mounted) {
+        Navigator.pop(context);
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Delivery status updated to ${status.toUpperCase()}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
       debugPrint('Error updating delivery status: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating delivery status: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }
