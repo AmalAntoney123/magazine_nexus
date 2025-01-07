@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../services/appwrite_service.dart';
 import '../../services/local_search_service.dart';
+import 'package:intl/intl.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import '../pdf_viewer_page.dart';
+import '../../widgets/subscription_modal.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -41,6 +48,22 @@ class _SearchPageState extends State<SearchPage> {
         _isLoading = false;
       });
     }
+  }
+
+  void _showSubscriptionModal(BuildContext context, String magazineId,
+      Map<String, dynamic> magazineData) {
+    final basePrice = (magazineData['price'] as num).toDouble();
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SubscriptionModal(
+        magazineData: {'id': magazineId, ...magazineData},
+        basePrice: basePrice,
+      ),
+    );
   }
 
   @override
@@ -126,41 +149,197 @@ class _SearchPageState extends State<SearchPage> {
   Widget _buildSearchResultCard(SearchResult result) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ListTile(
-        title: Text(result.magazineTitle),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      elevation: 3,
+      shadowColor: Colors.black26,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              result.context,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(
-                  Icons.article,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Page ${result.pageNumber}',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
+            // Magazine Cover Image
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.horizontal(left: Radius.circular(16)),
+              child: SizedBox(
+                width: 120,
+                child: AspectRatio(
+                  aspectRatio: 3 / 4,
+                  child: Image.network(
+                    AppwriteService.getFilePreviewUrl(
+                      bucketId: '67718720002aaa542f4d',
+                      fileId: result.coverUrl,
+                    ).toString(),
+                    fit: BoxFit.cover,
                   ),
                 ),
-              ],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      result.magazineTitle,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Issue #${result.issueNumber} - ${DateFormat('MMM d, y').format(result.publishDate)}',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Page ${result.pageNumber}, Line ${result.lineNumber}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      result.context,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const Spacer(),
+                    StreamBuilder(
+                      stream: FirebaseDatabase.instance
+                          .ref()
+                          .child(
+                              'subscriptions/${FirebaseAuth.instance.currentUser?.uid}')
+                          .onValue,
+                      builder: (context, snapshot) {
+                        final hasSubscription =
+                            _checkSubscription(snapshot, result.magazineId);
+                        return SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: hasSubscription
+                                  ? Colors.grey.shade200
+                                  : Theme.of(context).colorScheme.primary,
+                              foregroundColor: hasSubscription
+                                  ? Colors.grey.shade700
+                                  : Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: hasSubscription
+                                ? () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => PdfViewerPage(
+                                          fileId: result.pdfFileId,
+                                          title:
+                                              '${result.magazineTitle} - Issue #${result.issueNumber}',
+                                        ),
+                                      ),
+                                    )
+                                : () => _showSubscriptionModal(
+                                      context,
+                                      result.magazineId,
+                                      {
+                                        'title': result.magazineTitle,
+                                        'price': result.magazinePrice,
+                                        'coverUrl': result.coverUrl,
+                                        'description':
+                                            result.magazineDescription,
+                                        'frequency': result.frequency,
+                                      },
+                                    ),
+                            child: Text(
+                              hasSubscription ? 'View Magazine' : 'Subscribe',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
-        onTap: () {
-          // TODO: Navigate to the specific page in the magazine
-          // You can use result.magazineId and result.pageNumber
-        },
       ),
     );
+  }
+
+  bool _checkSubscription(AsyncSnapshot snapshot, String magazineId) {
+    if (!snapshot.hasData || snapshot.data?.snapshot?.value == null) {
+      return false;
+    }
+
+    final subscriptions = Map<String, dynamic>.from(
+      snapshot.data!.snapshot!.value as Map,
+    );
+
+    return subscriptions.values.any(
+      (sub) =>
+          sub['magazineId'] == magazineId &&
+          sub['status'] == 'active' &&
+          DateTime.parse(sub['endDate']).isAfter(DateTime.now()),
+    );
+  }
+
+  List<TextSpan> _highlightSearchText(String text, String keyword) {
+    final List<TextSpan> spans = [];
+    final String lowercaseText = text.toLowerCase();
+    final String lowercaseKeyword = keyword.toLowerCase();
+
+    int currentIndex = 0;
+    int matchIndex = lowercaseText.indexOf(lowercaseKeyword);
+
+    if (matchIndex == -1) {
+      spans.add(TextSpan(text: text));
+      return spans;
+    }
+
+    // Add text before match
+    if (matchIndex > 0) {
+      spans.add(TextSpan(text: text.substring(0, matchIndex)));
+    }
+
+    // Add highlighted match
+    spans.add(TextSpan(
+      text: text.substring(matchIndex, matchIndex + keyword.length),
+      style: TextStyle(
+        fontWeight: FontWeight.bold,
+        color: Theme.of(context).colorScheme.primary,
+        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+      ),
+    ));
+
+    // Add remaining text
+    if (matchIndex + keyword.length < text.length) {
+      spans.add(TextSpan(
+        text: text.substring(matchIndex + keyword.length),
+      ));
+    }
+
+    return spans;
   }
 }
