@@ -221,24 +221,60 @@ class _UserManagementTabState extends State<UserManagementTab> {
                   bool isDisabled = userData['disabled'] == true;
 
                   return Card(
+                    elevation: 4,
+                    shadowColor: Colors.black26,
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    clipBehavior: Clip.antiAlias,
                     margin:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: ListTile(
-                      title: Text(
-                        userData['name'] ?? 'No name',
-                        style: TextStyle(
-                          decoration:
-                              isDisabled ? TextDecoration.lineThrough : null,
+                      contentPadding: const EdgeInsets.all(16),
+                      leading: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: (isDisabled ? Colors.red : Colors.blue)
+                              .withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.person,
+                          size: 28,
+                          color: isDisabled ? Colors.red : Colors.blue,
                         ),
                       ),
-                      subtitle: Text(userData['email'] ?? 'No email'),
+                      title: Text(
+                        userData['name'] ?? 'No name',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  decoration: isDisabled
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                ),
+                      ),
+                      subtitle: Text(
+                        userData['email'] ?? 'No email',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            isDisabled ? 'Disabled' : 'Active',
-                            style: TextStyle(
-                              color: isDisabled ? Colors.red : Colors.green,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: (isDisabled ? Colors.red : Colors.green)
+                                  .withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              isDisabled ? 'Disabled' : 'Active',
+                              style: TextStyle(
+                                color: isDisabled ? Colors.red : Colors.green,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                           IconButton(

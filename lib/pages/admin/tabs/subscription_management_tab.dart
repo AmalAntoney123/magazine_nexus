@@ -89,7 +89,7 @@ class _SubscriptionManagementTabState extends State<SubscriptionManagementTab> {
                         child: _buildSummaryCard(
                           'Active Subscriptions',
                           activeSubscriptions.toString(),
-                          Colors.green[100]!,
+                          Colors.green,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -97,7 +97,7 @@ class _SubscriptionManagementTabState extends State<SubscriptionManagementTab> {
                         child: _buildSummaryCard(
                           'Monthly Revenue',
                           '₹${monthlyRevenue.toStringAsFixed(2)}',
-                          Colors.blue[100]!,
+                          Colors.blue,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -105,7 +105,7 @@ class _SubscriptionManagementTabState extends State<SubscriptionManagementTab> {
                         child: _buildSummaryCard(
                           'Total Revenue',
                           '₹${totalRevenue.toStringAsFixed(2)}',
-                          Colors.purple[100]!,
+                          Colors.purple,
                         ),
                       ),
                     ],
@@ -115,105 +115,152 @@ class _SubscriptionManagementTabState extends State<SubscriptionManagementTab> {
                   // DataTable Card
                   Expanded(
                     child: Card(
-                      elevation: 2,
+                      elevation: 4,
+                      shadowColor: Colors.black26,
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Table Title
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 16.0),
-                              child: Text(
-                                'Subscription Details',
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .primaryColor
+                                        .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.subscriptions,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Subscription Details',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                              ],
                             ),
+                            const SizedBox(height: 16),
                             // Table Content
                             Expanded(
                               child: SingleChildScrollView(
                                 scrollDirection: Axis.vertical,
                                 child: SingleChildScrollView(
                                   scrollDirection: Axis.horizontal,
-                                  child: DataTable(
-                                    sortColumnIndex: _sortColumnIndex,
-                                    sortAscending: _sortAscending,
-                                    columns: [
-                                      DataColumn(
-                                        label: const Text('User'),
-                                        onSort: (columnIndex, ascending) =>
-                                            _sort(columnIndex, ascending,
-                                                (d) => d.userName),
-                                      ),
-                                      DataColumn(
-                                        label: const Text('Magazine'),
-                                        onSort: (columnIndex, ascending) =>
-                                            _sort(columnIndex, ascending,
-                                                (d) => d.magazineTitle),
-                                      ),
-                                      DataColumn(
-                                        label: const Text('Period'),
-                                        onSort: (columnIndex, ascending) =>
-                                            _sort(columnIndex, ascending,
-                                                (d) => d.period),
-                                      ),
-                                      DataColumn(
-                                        label: const Text('Amount'),
-                                        numeric: true,
-                                        onSort: (columnIndex, ascending) =>
-                                            _sort(columnIndex, ascending,
-                                                (d) => d.amount),
-                                      ),
-                                      DataColumn(
-                                        label: const Text('Start Date'),
-                                        onSort: (columnIndex, ascending) =>
-                                            _sort(columnIndex, ascending,
-                                                (d) => d.startDate),
-                                      ),
-                                      DataColumn(
-                                        label: const Text('End Date'),
-                                        onSort: (columnIndex, ascending) =>
-                                            _sort(columnIndex, ascending,
-                                                (d) => d.endDate),
-                                      ),
-                                      DataColumn(
-                                        label: const Text('Status'),
-                                        onSort: (columnIndex, ascending) =>
-                                            _sort(columnIndex, ascending,
-                                                (d) => d.status),
-                                      ),
-                                    ],
-                                    rows: _subscriptions.map((subscription) {
-                                      final now = DateTime.now();
-                                      final isActive =
-                                          subscription.endDate.isAfter(now);
+                                  child: Theme(
+                                    data: Theme.of(context).copyWith(
+                                      cardColor: Colors.white,
+                                      dividerColor: Colors.grey[200],
+                                    ),
+                                    child: DataTable(
+                                      sortColumnIndex: _sortColumnIndex,
+                                      sortAscending: _sortAscending,
+                                      columns: [
+                                        DataColumn(
+                                          label: const Text('User'),
+                                          onSort: (columnIndex, ascending) =>
+                                              _sort(columnIndex, ascending,
+                                                  (d) => d.userName),
+                                        ),
+                                        DataColumn(
+                                          label: const Text('Magazine'),
+                                          onSort: (columnIndex, ascending) =>
+                                              _sort(columnIndex, ascending,
+                                                  (d) => d.magazineTitle),
+                                        ),
+                                        DataColumn(
+                                          label: const Text('Period'),
+                                          onSort: (columnIndex, ascending) =>
+                                              _sort(columnIndex, ascending,
+                                                  (d) => d.period),
+                                        ),
+                                        DataColumn(
+                                          label: const Text('Amount'),
+                                          numeric: true,
+                                          onSort: (columnIndex, ascending) =>
+                                              _sort(columnIndex, ascending,
+                                                  (d) => d.amount),
+                                        ),
+                                        DataColumn(
+                                          label: const Text('Start Date'),
+                                          onSort: (columnIndex, ascending) =>
+                                              _sort(columnIndex, ascending,
+                                                  (d) => d.startDate),
+                                        ),
+                                        DataColumn(
+                                          label: const Text('End Date'),
+                                          onSort: (columnIndex, ascending) =>
+                                              _sort(columnIndex, ascending,
+                                                  (d) => d.endDate),
+                                        ),
+                                        DataColumn(
+                                          label: const Text('Status'),
+                                          onSort: (columnIndex, ascending) =>
+                                              _sort(columnIndex, ascending,
+                                                  (d) => d.status),
+                                        ),
+                                      ],
+                                      rows: _subscriptions.map((subscription) {
+                                        final now = DateTime.now();
+                                        final isActive =
+                                            subscription.endDate.isAfter(now);
 
-                                      return DataRow(
-                                        cells: [
-                                          DataCell(Text(subscription.userName)),
-                                          DataCell(
-                                              Text(subscription.magazineTitle)),
-                                          DataCell(Text(subscription.period)),
-                                          DataCell(Text(
-                                              '₹${subscription.amount.toStringAsFixed(2)}')),
-                                          DataCell(Text(_formatDate(
-                                              subscription.startDate))),
-                                          DataCell(Text(_formatDate(
-                                              subscription.endDate))),
-                                          DataCell(
-                                            Text(
-                                              subscription.status,
-                                              style: TextStyle(
-                                                color: isActive
-                                                    ? Colors.green
-                                                    : Colors.red,
-                                                fontWeight: FontWeight.bold,
+                                        return DataRow(
+                                          cells: [
+                                            DataCell(
+                                                Text(subscription.userName)),
+                                            DataCell(Text(
+                                                subscription.magazineTitle)),
+                                            DataCell(Text(subscription.period)),
+                                            DataCell(Text(
+                                                '₹${subscription.amount.toStringAsFixed(2)}')),
+                                            DataCell(Text(_formatDate(
+                                                subscription.startDate))),
+                                            DataCell(Text(_formatDate(
+                                                subscription.endDate))),
+                                            DataCell(
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 8,
+                                                  vertical: 4,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: (isActive
+                                                          ? Colors.green
+                                                          : Colors.red)
+                                                      .withOpacity(0.1),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                child: Text(
+                                                  subscription.status,
+                                                  style: TextStyle(
+                                                    color: isActive
+                                                        ? Colors.green
+                                                        : Colors.red,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        ],
-                                      );
-                                    }).toList(),
+                                          ],
+                                        );
+                                      }).toList(),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -312,27 +359,53 @@ class _SubscriptionManagementTabState extends State<SubscriptionManagementTab> {
 
   Widget _buildSummaryCard(String title, String value, Color backgroundColor) {
     return Card(
-      elevation: 2,
-      color: backgroundColor,
+      elevation: 4,
+      shadowColor: Colors.black26,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: backgroundColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                title.contains('Active')
+                    ? Icons.check_circle
+                    : title.contains('Monthly')
+                        ? Icons.calendar_month
+                        : Icons.account_balance_wallet,
+                size: 28,
+                color: backgroundColor,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              value,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: backgroundColor,
+                    ),
               ),
             ),
           ],
