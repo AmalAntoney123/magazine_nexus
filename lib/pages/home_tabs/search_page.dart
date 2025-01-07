@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_database/firebase_database.dart';
-import '../../services/appwrite_service.dart';
+import '../../services/local_search_service.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -11,12 +10,37 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
+  List<SearchResult> _searchResults = [];
+  bool _isLoading = false;
+  String _error = '';
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  Future<void> _performSearch() async {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _error = '';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = '';
+    });
+
+    try {
+      final results = await LocalSearchService.searchMagazines(query);
+      setState(() {
+        _searchResults = results;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to search magazines: $e';
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -25,94 +49,116 @@ class _SearchPageState extends State<SearchPage> {
       children: [
         Padding(
           padding: const EdgeInsets.all(16.0),
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Search magazines...',
-              prefixIcon: Icon(Icons.search,
-                  color: Theme.of(context).colorScheme.primary),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search magazines...',
+                    prefixIcon: Icon(Icons.search,
+                        color: Theme.of(context).colorScheme.primary),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                  onSubmitted: (_) => _performSearch(),
+                ),
               ),
-              filled: true,
-              fillColor: Colors.white,
-            ),
-            onChanged: (value) =>
-                setState(() => _searchQuery = value.toLowerCase()),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _performSearch,
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Search'),
+              ),
+            ],
           ),
         ),
-        Expanded(
-          child: StreamBuilder(
-            stream: FirebaseDatabase.instance
-                .ref()
-                .child('magazines')
-                .orderByChild('isActive')
-                .equalTo(true)
-                .onValue,
-            builder: (context, AsyncSnapshot snapshot) {
-              if (!snapshot.hasData || snapshot.data?.snapshot?.value == null) {
-                return const Center(child: Text('No magazines available'));
-              }
-
-              Map<dynamic, dynamic> magazines =
-                  snapshot.data!.snapshot!.value as Map;
-              var filteredMagazines = magazines.entries.where((entry) {
-                final magazine = entry.value as Map;
-                final title =
-                    (magazine['title'] ?? '').toString().toLowerCase();
-                final description =
-                    (magazine['description'] ?? '').toString().toLowerCase();
-                return title.contains(_searchQuery) ||
-                    description.contains(_searchQuery);
-              }).toList();
-
-              if (filteredMagazines.isEmpty) {
-                return const Center(
-                    child: Text('No magazines match your search'));
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: filteredMagazines.length,
-                itemBuilder: (context, index) {
-                  final entry = filteredMagazines[index];
-                  return _buildSearchResultCard(
-                      context, entry.key, entry.value);
-                },
-              );
-            },
+        if (_searchResults.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Text(
+              'Found ${_searchResults.length} results',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ),
+        Expanded(
+          child: _buildSearchResults(),
         ),
       ],
     );
   }
 
-  Widget _buildSearchResultCard(
-      BuildContext context, String id, dynamic magazineData) {
+  Widget _buildSearchResults() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error.isNotEmpty) {
+      return Center(child: Text(_error, style: TextStyle(color: Colors.red)));
+    }
+
+    if (_searchResults.isEmpty && _searchController.text.isNotEmpty) {
+      return const Center(child: Text('No results found'));
+    }
+
+    if (_searchResults.isEmpty) {
+      return const Center(child: Text('Enter a search term and press Search'));
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: _searchResults.length,
+      itemBuilder: (context, index) {
+        final result = _searchResults[index];
+        return _buildSearchResultCard(result);
+      },
+    );
+  }
+
+  Widget _buildSearchResultCard(SearchResult result) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            AppwriteService.getFilePreviewUrl(
-              bucketId: '67718720002aaa542f4d',
-              fileId: magazineData['coverUrl'],
-            ).toString(),
-            width: 50,
-            height: 50,
-            fit: BoxFit.cover,
-          ),
-        ),
-        title: Text(magazineData['title'] ?? 'Untitled'),
-        subtitle: Text(
-          magazineData['description'] ?? 'No description',
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
+        title: Text(result.magazineTitle),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              result.context,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(
+                  Icons.article,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Page ${result.pageNumber}',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
         onTap: () {
-          // Navigate to magazine details page
-          // TODO: Implement navigation
+          // TODO: Navigate to the specific page in the magazine
+          // You can use result.magazineId and result.pageNumber
         },
       ),
     );
