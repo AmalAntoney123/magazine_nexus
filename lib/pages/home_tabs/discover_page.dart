@@ -254,15 +254,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   Widget _buildSortControls() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(Icons.sort, color: Theme.of(context).colorScheme.primary),
+          Icon(Icons.sort,
+              color: Theme.of(context).colorScheme.primary, size: 20),
           const SizedBox(width: 8),
           const Text('Sort by: '),
           DropdownButton<String>(
@@ -281,7 +277,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
           const Spacer(),
           IconButton(
             icon: Icon(
-                _sortAscending ? Icons.arrow_upward : Icons.arrow_downward),
+              _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+              size: 20,
+            ),
             onPressed: () {
               setState(() {
                 _sortAscending = !_sortAscending;
@@ -546,6 +544,91 @@ class _DiscoverPageState extends State<DiscoverPage> {
         (sub) => sub['magazineId'] == magazineId && sub['status'] == 'active');
   }
 
+  Widget _buildPromotionalBanner() {
+    return StreamBuilder(
+      stream: FirebaseDatabase.instance
+          .ref()
+          .child('promotional_banners')
+          .orderByChild('isActive')
+          .equalTo(true)
+          .onValue,
+      builder: (context, AsyncSnapshot snapshot) {
+        if (!snapshot.hasData || snapshot.data?.snapshot?.value == null) {
+          return const SizedBox.shrink();
+        }
+
+        Map<dynamic, dynamic> banners = snapshot.data!.snapshot!.value as Map;
+        var activeBanner = banners.entries.where((banner) {
+          final endDate = DateTime.parse(banner.value['endDate'] ?? '');
+          return DateTime.now().isBefore(endDate);
+        }).firstOrNull;
+
+        if (activeBanner == null) return const SizedBox.shrink();
+
+        return Container(
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: Card(
+            elevation: 4,
+            shadowColor: Colors.black26,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Stack(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(16)),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Image.network(
+                          AppwriteService.getFilePreviewUrl(
+                            bucketId: '67718720002aaa542f4d',
+                            fileId: activeBanner.value['imageUrl'],
+                          ).toString(),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        activeBanner.value['description'] ?? '',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+                  ],
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () {
+                        FirebaseDatabase.instance
+                            .ref()
+                            .child('promotional_banners')
+                            .child(activeBanner.key)
+                            .update({'isActive': false});
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -589,6 +672,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                       SliverToBoxAdapter(
                         child: Column(
                           children: [
+                            _buildPromotionalBanner(),
                             Padding(
                               padding: const EdgeInsets.only(top: 16),
                               child: _buildNewReleasesSection(sortedMagazines),
