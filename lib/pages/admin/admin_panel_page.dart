@@ -6,6 +6,7 @@ import 'package:magazine_nexus/pages/admin/tabs/subscription_management_tab.dart
 import 'tabs/magazine_management_tab.dart';
 import 'tabs/user_management_tab.dart';
 import 'tabs/promotions_management_tab.dart';
+import 'tabs/coupon_management_tab.dart';
 
 class AdminPanelPage extends StatefulWidget {
   const AdminPanelPage({super.key});
@@ -21,7 +22,7 @@ class _AdminPanelPageState extends State<AdminPanelPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
   }
 
   @override
@@ -38,7 +39,8 @@ class _AdminPanelPageState extends State<AdminPanelPage>
       'User Management',
       'Magazine Management',
       'Subscription Management',
-      'Promotions Management'
+      'Promotions Management',
+      'Coupon Management'
     ];
 
     return Scaffold(
@@ -94,6 +96,14 @@ class _AdminPanelPageState extends State<AdminPanelPage>
                       Navigator.pop(context);
                     },
                   ),
+                  ListTile(
+                    leading: const Icon(Icons.discount),
+                    title: const Text('Coupon Management'),
+                    onTap: () {
+                      _tabController.animateTo(5);
+                      Navigator.pop(context);
+                    },
+                  ),
                 ],
               ),
             ),
@@ -120,6 +130,7 @@ class _AdminPanelPageState extends State<AdminPanelPage>
           MagazineManagementTab(),
           SubscriptionManagementTab(),
           PromotionsManagementTab(),
+          CouponManagementTab(),
         ],
       ),
     );
