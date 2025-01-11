@@ -115,7 +115,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
-                  Text('Loading PDF...'),
+                  Text('Loading Magazine...'),
                 ],
               ),
             )

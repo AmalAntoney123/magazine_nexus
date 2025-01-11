@@ -52,6 +52,7 @@ dependencies:
   dio: ^5.7.0
   pdf: ^3.11.1
   syncfusion_flutter_pdf: ^25.2.7
+  flutter_launcher_icons: ^0.14.2
 
 dev_dependencies:
   flutter_test:

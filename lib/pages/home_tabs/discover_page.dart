@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/appwrite_service.dart';
 import '../../services/wishlist_service.dart';
 import '../../widgets/subscription_modal.dart';
+import '../../pages/magazine_detail_page.dart';
 
 class DiscoverPage extends StatefulWidget {
   const DiscoverPage({super.key});
@@ -348,148 +349,163 @@ class _DiscoverPageState extends State<DiscoverPage> {
       shadowColor: Colors.black26,
       color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ClipRRect(
-              borderRadius:
-                  const BorderRadius.horizontal(left: Radius.circular(16)),
-              child: SizedBox(
-                width: 120,
-                child: AspectRatio(
-                  aspectRatio: 3 / 4,
-                  child: Image.network(
-                    AppwriteService.getFilePreviewUrl(
-                      bucketId: '67718720002aaa542f4d',
-                      fileId: magazineData['coverUrl'],
-                    ).toString(),
-                    fit: BoxFit.cover,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MagazineDetailPage(
+                magazineId: magazineId,
+                magazineData: Map<String, dynamic>.from(magazineData),
+              ),
+            ),
+          );
+        },
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ClipRRect(
+                borderRadius:
+                    const BorderRadius.horizontal(left: Radius.circular(16)),
+                child: SizedBox(
+                  width: 120,
+                  child: AspectRatio(
+                    aspectRatio: 3 / 4,
+                    child: Image.network(
+                      AppwriteService.getFilePreviewUrl(
+                        bucketId: '67718720002aaa542f4d',
+                        fileId: magazineData['coverUrl'],
+                      ).toString(),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            magazineData['title'] ?? 'Untitled',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              magazineData['title'] ?? 'Untitled',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          StreamBuilder(
+                            stream: WishlistService.getWishlist(),
+                            builder: (context, snapshot) {
+                              final wishlisted = snapshot.hasData &&
+                                  (snapshot.data as Map)
+                                      .containsKey(magazineId);
+                              return IconButton(
+                                icon: Icon(
+                                  wishlisted
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: wishlisted ? Colors.red : Colors.grey,
                                 ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                                onPressed: () =>
+                                    WishlistService.toggleWishlist(magazineId),
+                              );
+                            },
                           ),
-                        ),
-                        StreamBuilder(
-                          stream: WishlistService.getWishlist(),
-                          builder: (context, snapshot) {
-                            final wishlisted = snapshot.hasData &&
-                                (snapshot.data as Map).containsKey(magazineId);
-                            return IconButton(
-                              icon: Icon(
-                                wishlisted
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color: wishlisted ? Colors.red : Colors.grey,
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        magazineData['description'] ?? 'No description',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey[600],
+                            ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              magazineData['frequency'] ?? '',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w500,
                               ),
-                              onPressed: () =>
-                                  WishlistService.toggleWishlist(magazineId),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      magazineData['description'] ?? 'No description',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
+                            ),
                           ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            magazineData['frequency'] ?? '',
+                          const SizedBox(width: 8),
+                          Text(
+                            '₹${magazineData['price']}',
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '₹${magazineData['price']}',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    StreamBuilder(
-                      stream: FirebaseDatabase.instance
-                          .ref()
-                          .child(
-                              'subscriptions/${FirebaseAuth.instance.currentUser?.uid}')
-                          .onValue,
-                      builder: (context, snapshot) {
-                        final isSubscribed =
-                            _isSubscribed(snapshot, magazineId);
-                        return SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isSubscribed
-                                  ? Colors.grey.shade200
-                                  : Theme.of(context).colorScheme.primary,
-                              foregroundColor: isSubscribed
-                                  ? Colors.grey.shade700
-                                  : Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                        ],
+                      ),
+                      const Spacer(),
+                      StreamBuilder(
+                        stream: FirebaseDatabase.instance
+                            .ref()
+                            .child(
+                                'subscriptions/${FirebaseAuth.instance.currentUser?.uid}')
+                            .onValue,
+                        builder: (context, snapshot) {
+                          final isSubscribed =
+                              _isSubscribed(snapshot, magazineId);
+                          return SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isSubscribed
+                                    ? Colors.grey.shade200
+                                    : Theme.of(context).colorScheme.primary,
+                                foregroundColor: isSubscribed
+                                    ? Colors.grey.shade700
+                                    : Colors.white,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: isSubscribed
+                                  ? null
+                                  : () => _showSubscriptionModal(
+                                      context, magazineId, magazineData),
+                              child: Text(
+                                isSubscribed ? 'Subscribed' : 'Subscribe',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
                               ),
                             ),
-                            onPressed: isSubscribed
-                                ? null
-                                : () => _showSubscriptionModal(
-                                    context, magazineId, magazineData),
-                            child: Text(
-                              isSubscribed ? 'Subscribed' : 'Subscribe',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
