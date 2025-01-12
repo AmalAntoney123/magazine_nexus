@@ -18,6 +18,45 @@ class _ProfilePageState extends State<ProfilePage> {
   // Add a key to force refresh the avatar
   final Key _avatarKey = UniqueKey();
 
+  Map<String, dynamic>? _userAddress;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserAddress();
+  }
+
+  Future<void> _loadUserAddress() async {
+    final address = await _authService.getUserAddress();
+    setState(() {
+      _userAddress = address;
+    });
+  }
+
+  String _formatAddress() {
+    if (_userAddress == null) return 'Not set';
+
+    final List<String> addressParts = [];
+
+    if (_userAddress!['line1']?.isNotEmpty == true) {
+      addressParts.add(_userAddress!['line1']);
+    }
+    if (_userAddress!['line2']?.isNotEmpty == true) {
+      addressParts.add(_userAddress!['line2']);
+    }
+    if (_userAddress!['city']?.isNotEmpty == true) {
+      addressParts.add(_userAddress!['city']);
+    }
+    if (_userAddress!['state']?.isNotEmpty == true) {
+      addressParts.add(_userAddress!['state']);
+    }
+    if (_userAddress!['postalCode']?.isNotEmpty == true) {
+      addressParts.add(_userAddress!['postalCode']);
+    }
+
+    return addressParts.isEmpty ? 'Not set' : addressParts.join(', ');
+  }
+
   Future<void> _uploadImage(BuildContext context) async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -269,6 +308,127 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> _editAddress(BuildContext context) async {
+    final TextEditingController line1Controller = TextEditingController();
+    final TextEditingController line2Controller = TextEditingController();
+    final TextEditingController cityController = TextEditingController();
+    final TextEditingController stateController = TextEditingController();
+    final TextEditingController postalCodeController = TextEditingController();
+
+    // Pre-fill with current address if it exists
+    if (_userAddress != null) {
+      line1Controller.text = _userAddress!['line1']?.toString() ?? '';
+      line2Controller.text = _userAddress!['line2']?.toString() ?? '';
+      cityController.text = _userAddress!['city']?.toString() ?? '';
+      stateController.text = _userAddress!['state']?.toString() ?? '';
+      postalCodeController.text = _userAddress!['postalCode']?.toString() ?? '';
+    }
+
+    String? addressError;
+
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Edit Address'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: line1Controller,
+                  decoration: InputDecoration(
+                    labelText: 'Address Line 1',
+                    border: const OutlineInputBorder(),
+                    errorText: addressError,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: line2Controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Address Line 2 (Optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: cityController,
+                  decoration: const InputDecoration(
+                    labelText: 'City',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: stateController,
+                  decoration: const InputDecoration(
+                    labelText: 'State',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: postalCodeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Postal Code',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                setState(() => addressError = null);
+
+                if (line1Controller.text.trim().isEmpty) {
+                  setState(
+                      () => addressError = 'Address Line 1 cannot be empty');
+                  return;
+                }
+
+                try {
+                  final Map<String, String> newAddress = {
+                    'line1': line1Controller.text.trim(),
+                    'line2': line2Controller.text.trim(),
+                    'city': cityController.text.trim(),
+                    'state': stateController.text.trim(),
+                    'postalCode': postalCodeController.text.trim(),
+                  };
+
+                  await _authService.updateUserAddress(newAddress);
+
+                  if (context.mounted) {
+                    // Refresh the address
+                    await _loadUserAddress();
+
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Address updated successfully'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  setState(() => addressError = 'Failed to update address');
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = _authService.getCurrentUser();
@@ -323,6 +483,13 @@ class _ProfilePageState extends State<ProfilePage> {
               leading: const Icon(Icons.email),
               title: const Text('Email'),
               subtitle: Text(user?.email ?? 'Not set'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.location_on),
+              title: const Text('Address'),
+              subtitle: Text(_formatAddress()),
+              trailing: const Icon(Icons.edit),
+              onTap: () => _editAddress(context),
             ),
             ListTile(
               leading: const Icon(Icons.lock),

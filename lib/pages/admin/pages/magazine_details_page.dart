@@ -7,6 +7,11 @@ import '../../../services/appwrite_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../dialogs/magazine_form_dialog.dart';
 import '../../../services/notification_service.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:open_file/open_file.dart';
 
 class MagazineDetailsPage extends StatelessWidget {
   final Magazine magazine;
@@ -19,6 +24,11 @@ class MagazineDetailsPage extends StatelessWidget {
       appBar: AppBar(
         title: Text(magazine.title),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            tooltip: 'Download Delivery List',
+            onPressed: () => _downloadDeliveryList(context),
+          ),
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () => _showEditMagazineDialog(context),
@@ -457,5 +467,207 @@ class MagazineDetailsPage extends StatelessWidget {
         );
       }
     }
+  }
+
+  Future<void> _downloadDeliveryList(BuildContext context) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      final databaseSnapshot = await FirebaseDatabase.instance.ref().get();
+
+      if (!databaseSnapshot.exists) {
+        if (context.mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No data found'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      final data = databaseSnapshot.value as Map<dynamic, dynamic>;
+      final users = data['users'] as Map<dynamic, dynamic>;
+      final subscriptions =
+          data['subscriptions'] as Map<dynamic, dynamic>? ?? {};
+
+      final activeSubscribers = <Map<String, dynamic>>[];
+
+      subscriptions.forEach((userId, userSubs) {
+        if (userSubs is Map) {
+          userSubs.forEach((subId, subscription) {
+            if (subscription is Map &&
+                subscription['magazineId'] == magazine.id &&
+                subscription['status'] == 'active') {
+              final user = users[userId];
+              if (user != null) {
+                activeSubscribers.add({
+                  'user': user,
+                  'subscription': subscription,
+                });
+              }
+            }
+          });
+        }
+      });
+
+      if (activeSubscribers.isEmpty) {
+        if (context.mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No active subscribers found'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      final pdf = pw.Document();
+
+      // Add single page with table
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (context) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              // Header
+              pw.Text(
+                magazine.title,
+                style: pw.TextStyle(
+                  fontSize: 24,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 10),
+              pw.Text(
+                'Delivery List',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 20),
+              // Table
+              pw.Table(
+                border: pw.TableBorder.all(),
+                columnWidths: {
+                  0: const pw.FlexColumnWidth(1), // Name
+                  1: const pw.FlexColumnWidth(2), // Address
+                },
+                children: [
+                  // Table header
+                  pw.TableRow(
+                    decoration: pw.BoxDecoration(
+                      color: PdfColors.grey300,
+                    ),
+                    children: [
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(8),
+                        child: pw.Text(
+                          'Name',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                      ),
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(8),
+                        child: pw.Text(
+                          'Address',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Table rows
+                  for (var subscriber in activeSubscribers)
+                    pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            subscriber['user']['name']?.toString() ?? 'N/A',
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            _formatAddress(subscriber['user']['address']),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+              pw.SizedBox(height: 20),
+              pw.Text(
+                'Generated on: ${DateTime.now().toString().split('.')[0]}',
+                style: const pw.TextStyle(fontSize: 10),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      // Get temporary directory and save PDF
+      final directory = await getApplicationDocumentsDirectory();
+      final fileName =
+          '${magazine.title.replaceAll(' ', '_')}_delivery_list.pdf';
+      final file = File('${directory.path}/$fileName');
+
+      await file.writeAsBytes(await pdf.save());
+
+      if (context.mounted) {
+        Navigator.pop(context); // Remove loading indicator
+
+        // Open PDF directly
+        await OpenFile.open(file.path);
+      }
+    } catch (e) {
+      debugPrint('Error generating delivery list: $e');
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error generating delivery list: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Helper function to format address
+  String _formatAddress(Map<dynamic, dynamic>? address) {
+    if (address == null) return 'N/A';
+
+    final List<String> parts = [];
+    if (address['line1']?.toString().isNotEmpty == true) {
+      parts.add(address['line1'].toString());
+    }
+    if (address['line2']?.toString().isNotEmpty == true) {
+      parts.add(address['line2'].toString());
+    }
+    if (address['city']?.toString().isNotEmpty == true) {
+      parts.add(address['city'].toString());
+    }
+    if (address['state']?.toString().isNotEmpty == true) {
+      parts.add(address['state'].toString());
+    }
+    if (address['postalCode']?.toString().isNotEmpty == true) {
+      parts.add(address['postalCode'].toString());
+    }
+
+    return parts.join(', ');
   }
 }

@@ -220,6 +220,31 @@ class _UserManagementTabState extends State<UserManagementTab> {
                   Map<dynamic, dynamic> userData = users[index].value as Map;
                   bool isDisabled = userData['disabled'] == true;
 
+                  // Format address if it exists
+                  String formattedAddress = '';
+                  if (userData['address'] != null) {
+                    final address = userData['address'] as Map;
+                    final List<String> addressParts = [];
+
+                    if (address['line1']?.toString().isNotEmpty == true) {
+                      addressParts.add(address['line1'].toString());
+                    }
+                    if (address['line2']?.toString().isNotEmpty == true) {
+                      addressParts.add(address['line2'].toString());
+                    }
+                    if (address['city']?.toString().isNotEmpty == true) {
+                      addressParts.add(address['city'].toString());
+                    }
+                    if (address['state']?.toString().isNotEmpty == true) {
+                      addressParts.add(address['state'].toString());
+                    }
+                    if (address['postalCode']?.toString().isNotEmpty == true) {
+                      addressParts.add(address['postalCode'].toString());
+                    }
+
+                    formattedAddress = addressParts.join(', ');
+                  }
+
                   return Card(
                     elevation: 4,
                     shadowColor: Colors.black26,
@@ -254,9 +279,37 @@ class _UserManagementTabState extends State<UserManagementTab> {
                                       : null,
                                 ),
                       ),
-                      subtitle: Text(
-                        userData['email'] ?? 'No email',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            userData['email'] ?? 'No email',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          if (formattedAddress.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(Icons.location_on_outlined,
+                                    size: 16, color: Colors.grey),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    formattedAddress,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: Colors.grey[600],
+                                        ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -303,6 +356,31 @@ class _UserManagementTabState extends State<UserManagementTab> {
     final DateTime? createdAt = userData['createdAt'] != null
         ? DateTime.fromMillisecondsSinceEpoch(userData['createdAt'])
         : null;
+
+    // Format address if it exists
+    String? formattedAddress;
+    if (userData['address'] != null) {
+      final address = userData['address'] as Map;
+      final List<String> addressParts = [];
+
+      if (address['line1']?.toString().isNotEmpty == true) {
+        addressParts.add(address['line1'].toString());
+      }
+      if (address['line2']?.toString().isNotEmpty == true) {
+        addressParts.add(address['line2'].toString());
+      }
+      if (address['city']?.toString().isNotEmpty == true) {
+        addressParts.add(address['city'].toString());
+      }
+      if (address['state']?.toString().isNotEmpty == true) {
+        addressParts.add(address['state'].toString());
+      }
+      if (address['postalCode']?.toString().isNotEmpty == true) {
+        addressParts.add(address['postalCode'].toString());
+      }
+
+      formattedAddress = addressParts.join(', ');
+    }
 
     showModalBottomSheet(
       context: context,
@@ -413,6 +491,11 @@ class _UserManagementTabState extends State<UserManagementTab> {
                     _detailRow(
                       'Account Created',
                       '${createdAt.day}/${createdAt.month}/${createdAt.year} at ${createdAt.hour}:${createdAt.minute}',
+                    ),
+                  if (formattedAddress != null)
+                    _detailRow(
+                      'Address',
+                      formattedAddress,
                     ),
                   const SizedBox(height: 24),
                   Row(

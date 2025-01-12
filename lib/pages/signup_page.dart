@@ -15,6 +15,11 @@ class _SignupPageState extends State<SignupPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _addressLine1Controller = TextEditingController();
+  final _addressLine2Controller = TextEditingController();
+  final _cityController = TextEditingController();
+  final _stateController = TextEditingController();
+  final _postalCodeController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   final _authService = AuthService();
@@ -79,6 +84,16 @@ class _SignupPageState extends State<SignupPage> {
     return null;
   }
 
+  String? _validateAddress(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your address';
+    }
+    if (value.length < 10) {
+      return 'Please enter a complete address';
+    }
+    return null;
+  }
+
   void _handleSignup() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -100,6 +115,13 @@ class _SignupPageState extends State<SignupPage> {
           'name': _nameController.text,
           'email': _emailController.text,
           'role': 'user', // Default role for new users
+          'address': {
+            'line1': _addressLine1Controller.text,
+            'line2': _addressLine2Controller.text,
+            'city': _cityController.text,
+            'state': _stateController.text,
+            'postalCode': _postalCodeController.text,
+          },
           'createdAt': ServerValue.timestamp,
           'lastLogin': ServerValue.timestamp,
         });
@@ -163,206 +185,263 @@ class _SignupPageState extends State<SignupPage> {
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height -
-                  MediaQuery.of(context).padding.top,
-              child: Column(
-                children: [
-                  // Top section with logo and text
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 48),
-                          Image.asset(
-                            'assets/images/logo.png',
-                            width: 150,
-                            height: 150,
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'Create Account',
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Sign up to get started',
-                            style:
-                                Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      color: Colors.grey[600],
-                                    ),
-                          ),
-                        ],
-                      ),
+            padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24),
+            child: Column(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
                     ),
-                  ),
-                  // Bottom section with inputs
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(30),
-                        topRight: Radius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        spreadRadius: 1,
+                        blurRadius: 10,
+                        offset: const Offset(0, -2),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          spreadRadius: 1,
-                          blurRadius: 10,
-                          offset: const Offset(0, -2),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Name field
+                        TextFormField(
+                          controller: _nameController,
+                          validator: _validateName,
+                          decoration: InputDecoration(
+                            labelText: 'Full Name',
+                            prefixIcon: const Icon(Icons.person_outline),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          textCapitalization: TextCapitalization.words,
+                          enabled: !_isLoading,
+                        ),
+                        const SizedBox(height: 16),
+                        // Email field
+                        TextFormField(
+                          controller: _emailController,
+                          validator: _validateEmail,
+                          decoration: InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: const Icon(Icons.email_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                          enabled: !_isLoading,
+                        ),
+                        const SizedBox(height: 16),
+                        // Password field
+                        TextFormField(
+                          controller: _passwordController,
+                          validator: _validatePassword,
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _showPassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _showPassword = !_showPassword;
+                                });
+                              },
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          obscureText: !_showPassword,
+                          enabled: !_isLoading,
+                        ),
+                        const SizedBox(height: 16),
+                        // Confirm Password field
+                        TextFormField(
+                          controller: _confirmPasswordController,
+                          validator: _validateConfirmPassword,
+                          decoration: InputDecoration(
+                            labelText: 'Confirm Password',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _showConfirmPassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _showConfirmPassword = !_showConfirmPassword;
+                                });
+                              },
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          obscureText: !_showConfirmPassword,
+                          enabled: !_isLoading,
+                        ),
+                        const SizedBox(height: 16),
+                        // Address Line 1
+                        TextFormField(
+                          controller: _addressLine1Controller,
+                          validator: _validateAddress,
+                          decoration: InputDecoration(
+                            labelText: 'Address Line 1',
+                            prefixIcon: const Icon(Icons.location_on_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          enabled: !_isLoading,
+                        ),
+                        const SizedBox(height: 16),
+
+// Address Line 2
+                        TextFormField(
+                          controller: _addressLine2Controller,
+                          decoration: InputDecoration(
+                            labelText: 'Address Line 2 (Optional)',
+                            prefixIcon: const Icon(Icons.location_on_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          enabled: !_isLoading,
+                        ),
+                        const SizedBox(height: 16),
+
+// City and State row
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _cityController,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter city';
+                                  }
+                                  return null;
+                                },
+                                decoration: InputDecoration(
+                                  labelText: 'City',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                enabled: !_isLoading,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _stateController,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter state';
+                                  }
+                                  return null;
+                                },
+                                decoration: InputDecoration(
+                                  labelText: 'State',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                enabled: !_isLoading,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+// Postal Code
+                        TextFormField(
+                          controller: _postalCodeController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter postal code';
+                            }
+                            if (!RegExp(r'^\d{6}$').hasMatch(value)) {
+                              return 'Please enter a valid 6-digit postal code';
+                            }
+                            return null;
+                          },
+                          decoration: InputDecoration(
+                            labelText: 'Postal Code',
+                            prefixIcon:
+                                const Icon(Icons.local_post_office_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          keyboardType: TextInputType.number,
+                          enabled: !_isLoading,
+                        ),
+                        const SizedBox(height: 24),
+                        const SizedBox(height: 24),
+                        // Sign up button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _handleSignup,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                    ),
+                                  )
+                                : const Text(
+                                    'Sign Up',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Login text
+                        TextButton(
+                          onPressed: _isLoading
+                              ? null
+                              : () {
+                                  Navigator.pop(context);
+                                },
+                          child: Text(
+                            'Already have an account? Login',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        24.0,
-                        24.0,
-                        24.0,
-                        24.0 + MediaQuery.of(context).viewInsets.bottom,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Name field
-                          TextFormField(
-                            controller: _nameController,
-                            validator: _validateName,
-                            decoration: InputDecoration(
-                              labelText: 'Full Name',
-                              prefixIcon: const Icon(Icons.person_outline),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            textCapitalization: TextCapitalization.words,
-                            enabled: !_isLoading,
-                          ),
-                          const SizedBox(height: 16),
-                          // Email field
-                          TextFormField(
-                            controller: _emailController,
-                            validator: _validateEmail,
-                            decoration: InputDecoration(
-                              labelText: 'Email',
-                              prefixIcon: const Icon(Icons.email_outlined),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            keyboardType: TextInputType.emailAddress,
-                            enabled: !_isLoading,
-                          ),
-                          const SizedBox(height: 16),
-                          // Password field
-                          TextFormField(
-                            controller: _passwordController,
-                            validator: _validatePassword,
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _showPassword
-                                      ? Icons.visibility
-                                      : Icons.visibility_off,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _showPassword = !_showPassword;
-                                  });
-                                },
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            obscureText: !_showPassword,
-                            enabled: !_isLoading,
-                          ),
-                          const SizedBox(height: 16),
-                          // Confirm Password field
-                          TextFormField(
-                            controller: _confirmPasswordController,
-                            validator: _validateConfirmPassword,
-                            decoration: InputDecoration(
-                              labelText: 'Confirm Password',
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _showConfirmPassword
-                                      ? Icons.visibility
-                                      : Icons.visibility_off,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _showConfirmPassword =
-                                        !_showConfirmPassword;
-                                  });
-                                },
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            obscureText: !_showConfirmPassword,
-                            enabled: !_isLoading,
-                          ),
-                          const SizedBox(height: 24),
-                          // Sign up button
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _handleSignup,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.primary,
-                                foregroundColor: Colors.white,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                                Colors.white),
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Sign Up',
-                                      style: TextStyle(fontSize: 16),
-                                    ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Login text
-                          TextButton(
-                            onPressed: _isLoading
-                                ? null
-                                : () {
-                                    Navigator.pop(context);
-                                  },
-                            child: Text(
-                              'Already have an account? Login',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

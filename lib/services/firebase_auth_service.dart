@@ -24,6 +24,15 @@ class AuthService {
 
       // Update user profile with name
       await userCredential.user?.updateDisplayName(name);
+
+      // Initialize user data in Realtime Database
+      await _database.child('users').child(userCredential.user!.uid).set({
+        'email': email,
+        'name': name,
+        'createdAt': ServerValue.timestamp,
+        'address': '', // Initialize empty address
+      });
+
       return userCredential;
     } catch (e) {
       rethrow;
@@ -101,5 +110,28 @@ class AuthService {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<Map<String, dynamic>?> getUserAddress() async {
+    final user = getCurrentUser();
+    if (user == null) return null;
+
+    final snapshot =
+        await _database.child('users').child(user.uid).child('address').get();
+
+    if (!snapshot.exists) return null;
+
+    return Map<String, dynamic>.from(snapshot.value as Map);
+  }
+
+  Future<void> updateUserAddress(Map<String, String> address) async {
+    final user = getCurrentUser();
+    if (user == null) throw Exception('No user logged in');
+
+    await _database
+        .child('users')
+        .child(user.uid)
+        .child('address')
+        .update(address);
   }
 }
